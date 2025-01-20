@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AspireRagDemo.AppHost", "AspireRagDemo.AppHost\AspireRagDemo.AppHost.csproj", "{8BC5CE16-908E-4621-B805-CCEC733FF144}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AspireRagDemo.API", "AspireRagDemo.API\AspireRagDemo.API.csproj", "{C9CEC252-D759-4DB4-BB16-D09A2F32B7EF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AspireRagDemo.ServiceDefaults", "AspireRagDemo.ServiceDefaults\AspireRagDemo.ServiceDefaults.csproj", "{DC0E29BD-074D-4E39-8B4B-82A63A48AF7A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8BC5CE16-908E-4621-B805-CCEC733FF144}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8BC5CE16-908E-4621-B805-CCEC733FF144}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8BC5CE16-908E-4621-B805-CCEC733FF144}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8BC5CE16-908E-4621-B805-CCEC733FF144}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C9CEC252-D759-4DB4-BB16-D09A2F32B7EF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C9CEC252-D759-4DB4-BB16-D09A2F32B7EF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C9CEC252-D759-4DB4-BB16-D09A2F32B7EF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C9CEC252-D759-4DB4-BB16-D09A2F32B7EF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DC0E29BD-074D-4E39-8B4B-82A63A48AF7A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DC0E29BD-074D-4E39-8B4B-82A63A48AF7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DC0E29BD-074D-4E39-8B4B-82A63A48AF7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DC0E29BD-074D-4E39-8B4B-82A63A48AF7A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "http": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "applicationUrl": "http://localhost:15062",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+
+        "DOTNET_DASHBOARD_OTLP_ENDPOINT_URL": "http://localhost:21268",
+        "DOTNET_DASHBOARD_OTLP_CORS_ALLOWEDORIGIN":"*",
+        "DOTNET_DASHBOARD_OTLP_HTTP_ENDPOINT_URL": "http://localhost:16175",
+        "DOTNET_RESOURCE_SERVICE_ENDPOINT_URL": "http://localhost:17037",
+        "DOTNET_ASPIRE_SHOW_DASHBOARD_RESOURCES": "true",
+        "ASPIRE_ALLOW_UNSECURED_TRANSPORT": "true",
+        "DOTNET_DASHBOARD_CORS_ALLOWED_ORIGINS": "*",
+        
+        "DOTNET_ENVIRONMENT": "Development",
+        "DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS": "true",
+        "EMBEDDING_MODEL": "mxbai-embed-large",
+        "EMBEDDING_MODEL_PROVIDER": "Ollama",
+        "CHAT_MODEL": "phi3.5",
+        "CHAT_MODEL_PROVIDER": "Ollama"
+      }
+    }
+  }
+}
