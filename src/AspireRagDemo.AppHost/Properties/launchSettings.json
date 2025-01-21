@@ -19,9 +19,11 @@
         
         "DOTNET_ENVIRONMENT": "Development",
         "DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS": "true",
-        "EMBEDDING_MODEL": "mxbai-embed-large",
+        "EMBEDDING_MODEL-": "mxbai-embed-large",
+        "EMBEDDING_MODEL": "nomic-embed-text",
         "EMBEDDING_MODEL_PROVIDER": "Ollama",
-        "CHAT_MODEL": "phi3.5",
+        "CHAT_MODEL-": "phi3.5",
+        "CHAT_MODEL": "gemma2:2b",
         "CHAT_MODEL_PROVIDER": "Ollama"
       }
     }

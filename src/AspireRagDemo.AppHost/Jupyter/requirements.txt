@@ -15,4 +15,7 @@ opentelemetry-exporter-otlp-proto-grpc
 opentelemetry-instrumentation-langchain
 opentelemetry-distro
 opentelemetry-exporter-otlp
-opentelemetry-instrumentation-flask
+libmagic
+langchain-community
+langchain-openai
+unstructured[md]

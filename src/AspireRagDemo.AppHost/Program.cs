@@ -1,10 +1,6 @@
 using AspireRagDemo.AppHost;
 using AspireRagDemo.ServiceDefaults;
-//ConnectionStrings__chat-model Endpoint=http://ollama:11434;Model=phi3.5
-//ConnectionStrings__embedding-model Endpoint=http://ollama:11434;Model=mxbai-embed-large
-//ConnectionStrings__qdrant Endpoint=http://qdrant:6334;Key=aMjJKx0t1a6E9hysaCacWz
-//ConnectionStrings__qdrant_http Endpoint=http://qdrant:6333;Key=aMjJKx0t1a6E9hysaCacWz
-//services__api-service__http__0 http://host.docker.internal:5026
+
 var builder = DistributedApplication.CreateBuilder(args);
  
 ChatConfiguration chatConfiguration = new(Environment.GetEnvironmentVariable("CHAT_MODEL") ?? "phi3.5", 
@@ -12,13 +8,11 @@ ChatConfiguration chatConfiguration = new(Environment.GetEnvironmentVariable("CH
     Enum.Parse<ModelProvider>(Environment.GetEnvironmentVariable("CHAT_MODEL_PROVIDER")?? "Ollama"),
     Enum.Parse<ModelProvider>(Environment.GetEnvironmentVariable("EMBEDDING_MODEL_PROVIDER")?? "Ollama"));
 
-var openaiConnection = builder.AddConnectionString("openaiConnection");
-var openAIKey = builder.AddParameter("OpenAIKey", secret: true);
-var huggingFaceKey = builder.AddParameter("HuggingFaceKey", secret: true);
-
+//this will be used for evaluating our performance in the evaluation notebook
+var openAiKey = builder.AddParameter("OpenAIKey", secret: true);
 // When Jupyter server is launched, this is the secret to use when logging in to manage notebooks.
 var jupyterLocalSecret = builder.AddParameter("JupyterSecret", secret: false);
-
+// container ports we will be using
 Dictionary<string, int> applicationPorts = new()
 {
     { Constants.ConnectionStringNames.ApiService, 5000 },
@@ -26,24 +20,30 @@ Dictionary<string, int> applicationPorts = new()
     { Constants.ConnectionStringNames.JupyterService, 8888 }
 };
 
-var chromaDb = builder.AddQdrant(Constants.ConnectionStringNames.Qdrant)
-    .WithLifetime(ContainerLifetime.Persistent)
+var vectorStore = builder.AddQdrant(Constants.ConnectionStringNames.Qdrant)
+    .WithImageTag("v1.13.0-unprivileged")
+    .WithLifetime(ContainerLifetime.Session)
     .WithDataBindMount(source: "./data/qdrant");
-    
+
+// Following image is based off ollama 0.5.7 TAG and runs as non-root user.
 var ollama = builder.AddOllama(Constants.ConnectionStringNames.Ollama)
-    .WithDataVolume();
+    .WithImage("syamaner/ollama-nonroot")
+    .WithLifetime(ContainerLifetime.Session)
+    .WithImageTag("1")
+    .WithBindMount("./Ollama/data","/home/ollama/.ollama");
+   // .WithDataVolume();
+
+// Models are driven by environment variables in launchSettings.json
 var chatModel = ollama.AddModel(name: Constants.ConnectionStringNames.ChatModel,
     chatConfiguration.ChatModel);
 var embeddingModel = ollama.AddModel(name:Constants.ConnectionStringNames.EmbeddingModel, 
     chatConfiguration.EmbeddingModel);
 
 var apiService = builder.AddProject<Projects.AspireRagDemo_API>(Constants.ConnectionStringNames.ApiService) 
-    .WithReference(chromaDb)
+    .WithReference(vectorStore)
     .WithReference(chatModel)
     .WithReference(embeddingModel)
-    //.WithEnvironment("DOTNET_DASHBOARD_OTLP_ENDPOINT_URL","http://localhost:21268")
-    //.WithEnvironment("OpenAIKey",openAIKey.Resource.Value)
-    .WaitFor(chromaDb)
+    .WaitFor(vectorStore)
     .WaitFor(chatModel)
     .WaitFor(embeddingModel);
 
@@ -64,19 +64,17 @@ _ = builder
     .WithArgs($"--NotebookApp.token={jupyterLocalSecret.Resource.Value}")
     .WithBindMount("./Jupyter/Notebooks/","/home/jovyan/work")
     .WithHttpEndpoint(targetPort: applicationPorts[Constants.ConnectionStringNames.JupyterService], env: "PORT")
+    .WithLifetime(ContainerLifetime.Session)
     .WithOtlpExporter()
-    //http://host.docker.internal:21268    
-    /*.WithEnvironment("OTEL_EXPORTER_OTLP_ENDPOINT","http://host.docker.internal:16175")
-    .WithEnvironment("OTEL_EXPORTER_OTLP_PROTOCOL","http/json")*/
     .WithEnvironment("OTEL_SERVICE_NAME","jupyterdemo")
     .WithEnvironment("OTEL_EXPORTER_OTLP_INSECURE","true")
-    //.WithEnvironment("OTEL_TRACES_EXPORTER","console,otlp")
     .WithEnvironment("PYTHONUNBUFFERED", "0")
-    .WithReference(chromaDb)
+    .WithEnvironment("OPENAI_KEY", openAiKey.Resource.Value)
+    .WithReference(vectorStore)
     .WithReference(apiService)
     .WithReference(embeddingModel)
     .WithReference(chatModel)
-    .WaitFor(chromaDb)
+    .WaitFor(vectorStore)
     .WaitFor(apiService)
     .WaitFor(chatModel)
     .WaitFor(embeddingModel)
