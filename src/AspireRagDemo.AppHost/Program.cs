@@ -8,8 +8,6 @@ ChatConfiguration chatConfiguration = new(Environment.GetEnvironmentVariable("CH
     Enum.Parse<ModelProvider>(Environment.GetEnvironmentVariable("CHAT_MODEL_PROVIDER")?? "Ollama"),
     Enum.Parse<ModelProvider>(Environment.GetEnvironmentVariable("EMBEDDING_MODEL_PROVIDER")?? "Ollama"));
 
-//this will be used for evaluating our performance in the evaluation notebook
-var openAiKey = builder.AddParameter("OpenAIKey", secret: true);
 // When Jupyter server is launched, this is the secret to use when logging in to manage notebooks.
 var jupyterLocalSecret = builder.AddParameter("JupyterSecret", secret: false);
 // container ports we will be using
@@ -29,9 +27,8 @@ var vectorStore = builder.AddQdrant(Constants.ConnectionStringNames.Qdrant)
 var ollama = builder.AddOllama(Constants.ConnectionStringNames.Ollama)
     .WithImage("syamaner/ollama-nonroot")
     .WithLifetime(ContainerLifetime.Session)
-    .WithImageTag("1")
+    .WithImageTag("0.5.7")
     .WithBindMount("./Ollama/data","/home/ollama/.ollama");
-   // .WithDataVolume();
 
 // Models are driven by environment variables in launchSettings.json
 var chatModel = ollama.AddModel(name: Constants.ConnectionStringNames.ChatModel,
@@ -57,6 +54,9 @@ _ = builder
     .WithOtlpExporter()
     .WithExternalHttpEndpoints();
 
+// this will be used for evaluating our performance in the evaluation notebook
+// Ingestion and Query will use Ollama for both embeddings and generation.
+var openAiKey = builder.AddParameter("OpenAIKey", secret: true);
 // For the ingestion pipeline and evaluation, we will be using Python and Jupyter.
 _ = builder
     .AddDockerfile(Constants.ConnectionStringNames.JupyterService, "./Jupyter")
