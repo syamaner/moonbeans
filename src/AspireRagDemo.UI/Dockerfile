@@ -20,7 +20,11 @@ RUN chmod +x /app/entrypoint.sh
 
 EXPOSE ${PORT}
 
+RUN groupadd -r -g 65532 ollama && useradd --create-home --shell /bin/bash --uid 65532 -g ollama ui_user
+
+USER 65532:65532
+
 HEALTHCHECK CMD curl --fail http://localhost:${PORT}/_stcore/health
 
-ENTRYPOINT ["/app/entrypoint.sh"]
+ENTRYPOINT [ "bash", "/app/entrypoint.sh"] 
 

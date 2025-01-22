@@ -22,13 +22,14 @@ Dictionary<string, int> applicationPorts = new()
 var vectorStore = builder.AddQdrant(Constants.ConnectionStringNames.Qdrant)
     .WithImageTag("v1.13.0-unprivileged")
     .WithLifetime(ContainerLifetime.Session)
-    .WithDataBindMount(source: "./data/qdrant");
-
+    .WithBindMount( "./data/qdrant","/qdrant/storage:z");
+ 
 // Following image is based off ollama 0.5.7 TAG and runs as non-root user.
 var ollama = builder.AddOllama(Constants.ConnectionStringNames.Ollama)
     .WithImage("syamaner/ollama-nonroot")
     .WithLifetime(ContainerLifetime.Session)
     .WithImageTag("0.5.7")
+    
     .WithBindMount("./Ollama/data","/home/ollama/.ollama");
 
 // Models are driven by environment variables in launchSettings.json
