@@ -1,9 +1,22 @@
 @AspireRagDemo.API_HostAddress = http://localhost:56288
 
-GET  http://localhost:56288/embedding?input=hello
+GET  http://localhost:5026/embedding?input=hello
 Accept: application/json
 
 ###
 # @timeout 60000
-GET  http://localhost:5026/rag?input="What is the purpose of this repository? Also what is the name?"
+GET  http://localhost:5026/vector-search?input="What is the purpose of this repository? Also what is the name?"
 Accept: application/json
+
+###
+# @timeout 60000
+GET  http://localhost:5026/chat-with-context?input="What is the purpose of .Net Aspire? And why does it matter?"
+Accept: application/json
+
+
+###
+# @timeout 60000
+GET  http://localhost:5026/chat?input="What is the purpose of this repository? Also what is the name?"
+Accept: application/json
+
+ 

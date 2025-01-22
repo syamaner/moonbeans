@@ -38,7 +38,7 @@ var embeddingModel = ollama.AddModel(name:Constants.ConnectionStringNames.Embedd
     chatConfiguration.EmbeddingModel);
 
 var apiService = builder.AddProject<Projects.AspireRagDemo_API>(Constants.ConnectionStringNames.ApiService)    
-    .WithEnvironment("VECTOR_STORE_COLLECTION_NAME", chatConfiguration.VectorStoreConnectionName)
+    .WithEnvironment("VectorStoreCollectionName", chatConfiguration.VectorStoreConnectionName)
     .WithReference(vectorStore)
     .WithReference(chatModel)
     .WithReference(embeddingModel)

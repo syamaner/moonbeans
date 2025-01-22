@@ -64,9 +64,9 @@ os.environ["OPENAI_API_KEY"] = openAiKey
 class ConfigHelper:
     def __init__(self, is_eval=False):
         if is_eval:
-            self.vector_store_collection_name = f'1eval-{os.getenv("VECTOR_STORE_COLLECTION_NAME")}'
+            self.vector_store_collection_name = f'eval-{os.getenv("VECTOR_STORE_COLLECTION_NAME")}'
         else:            
-            self.vector_store_collection_name = {os.getenv("VECTOR_STORE_COLLECTION_NAME")}
+            self.vector_store_collection_name = os.getenv("VECTOR_STORE_COLLECTION_NAME")
         self.__parse_configuration()
         
     def parse_ollama_connection(self, conn_str):
@@ -90,7 +90,7 @@ class ConfigHelper:
         self._vector_db_config = VectorDBConfig(
             url=qdrant_url,
             api_key=qdrant_key,
-            collection_name="evaluation-ek-md"
+            collection_name=self.vector_store_collection_name
         )
         self._chat_config = ChatConfig(
             model_name=chat_model_id,

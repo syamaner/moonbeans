@@ -1,3 +1,6 @@
+using System.Text;
+using System.Text.Json;
+using AspireRagDemo.API;
 using AspireRagDemo.ServiceDefaults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.SemanticKernel;
@@ -14,50 +17,9 @@ builder.AddServiceDefaults();
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
-var kernelBuilder = Kernel.CreateBuilder();
-
-builder.Services.AddSingleton<QdrantClient>(sp =>
-{
-    var configuration = sp.GetRequiredService<IConfiguration>();
-    var connectionString = configuration.GetConnectionString(Constants.ConnectionStringNames.Qdrant);
-    var endpoint = connectionString?.Split(";")[0].Replace("Endpoint=", "");
-    var key = connectionString?.Split(";")[1].Replace("Key=", "");
-
-    return new QdrantClient(new Uri(endpoint ?? throw new InvalidOperationException("Qdrant endpoint cannot be null.")), key);
-});
-builder.Services.AddQdrantVectorStore();
-
-builder.Services.AddKeyedSingleton<Kernel>(Constants.ConnectionStringNames.EmbeddingModel, (provider, key) =>
-{
-    var configuration = provider.GetRequiredService<IConfiguration>();
-    var connectionString = configuration.GetConnectionString(key.ToString()!);
-    var uri = new Uri(connectionString!.Split(";")[0].Replace("Endpoint=", ""));
-    var httpClient = new HttpClient()
-    {
-        Timeout = TimeSpan.FromMinutes(10),
-        BaseAddress = uri
-    };
-    var model = connectionString.Split(";")[1].Replace("Model=", "");
-    var kernel = kernelBuilder.AddOllamaTextEmbeddingGeneration(model, httpClient, key.ToString())
-        .Build();
-    return kernel;
-});
-builder.Services.AddKeyedSingleton<Kernel>(Constants.ConnectionStringNames.ChatModel, (provider, key) =>
-{
-    var configuration = provider.GetRequiredService<IConfiguration>();
-    var connectionString = configuration.GetConnectionString(key.ToString()!);
-    var uri = new Uri(connectionString!.Split(";")[0].Replace("Endpoint=", ""));
-    var model = connectionString.Split(";")[1].Replace("Model=", "");
-    var httpClient = new HttpClient()
-    {
-        Timeout = TimeSpan.FromMinutes(10),
-        BaseAddress = uri
-    };
-    var kernel = kernelBuilder.AddOllamaChatCompletion(model, httpClient, key.ToString())
-        .Build();
-    
-    return kernel;
-});
+ 
+builder.AddVectorStore();
+builder.AddSemanticKernelModels();
 
 var app = builder.Build();
 
@@ -67,43 +29,53 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.MapGet("/embedding", async ([FromQuery] string input,
-        [FromKeyedServices(key:Constants.ConnectionStringNames.EmbeddingModel)]
-        Kernel kernel, [FromServices] QdrantClient qdrantClient) =>
-    {
-        string collection = "my_repo_collection";
-       
+app.MapGet("/embedding", async ([FromQuery] string input, [FromServices] Kernel kernel ) =>
+    {      
         var embeddingGenerator = kernel.GetRequiredService<ITextEmbeddingGenerationService>();
-        return await embeddingGenerator.GenerateEmbeddingsAsync([input]);
- //       var result = await qdrantClient.SearchAsync(collection, vector[0], limit: 15);
-  //      return result;
+        var embeddings = await embeddingGenerator.GenerateEmbeddingsAsync([input]);
+        return embeddings;
     })
     .WithName("GetEmbeddings");
 
-app.MapGet("/rag", async ([FromQuery] string input,
-        [FromKeyedServices(key:Constants.ConnectionStringNames.ChatModel)]Kernel kernel,        
-        [FromKeyedServices(key:Constants.ConnectionStringNames.EmbeddingModel)] Kernel embeddingKernel,
-        [FromServices] QdrantClient qdrantClient) =>
-    {
-        string collection = "my_repo_collection";
-       
-        var embeddingGenerator = embeddingKernel.GetRequiredService<ITextEmbeddingGenerationService>();
+app.MapGet("/vector-search", async ([FromQuery] string input,  
+        [FromServices]Kernel kernel, 
+        [FromServices] QdrantClient qdrantClient,
+        [FromServices] IConfiguration configuration) =>
+    {      
+        var collection =  configuration["VectorStoreCollectionName"];
+        var embeddingGenerator = kernel.GetRequiredService<ITextEmbeddingGenerationService>();
         var vectors= await embeddingGenerator.GenerateEmbeddingsAsync([input]);
-        var result = await qdrantClient.SearchAsync(collection, vectors[0], limit: 15);
-        var x = result.ToString();
-        var chat = kernel.GetRequiredService<IChatCompletionService>();
+        var result = await qdrantClient.SearchAsync(collection, vectors[0], limit: 5);
+        return result;
+    })
+    .WithName("VectorSearch");
+
+app.MapGet("/chat-with-context", async ([FromQuery] string input,  
+        [FromServices]Kernel kernel, 
+        [FromServices] QdrantClient qdrantClient,
+        [FromServices] IConfiguration configuration, [FromServices]ITechnicalAssistantChat technicalAssistantChat) =>
+    {
+        var collection =  configuration["VectorStoreCollectionName"];
+        var embeddingGenerator = kernel.GetRequiredService<ITextEmbeddingGenerationService>();
+        var vectors= await embeddingGenerator.GenerateEmbeddingsAsync([input]);
+        var result = await qdrantClient.SearchAsync(collection, vectors[0], limit: 5);
         
-        var chatOut  = await chat.GetChatMessageContentAsync(x);
+        var resultsTyped =  JsonSerializer.Deserialize<List<VectorQueryResult>>(result.ToString());
+        var stbContext = new StringBuilder();
+        foreach (var queryResult in resultsTyped)
+        {
+            stbContext.AppendLine(queryResult.Payload.PageContent.Value);
+        }
+        var chatOut  = await technicalAssistantChat.GetResponseAsync(stbContext.ToString(), input);
         return chatOut;
     })
-    .WithName("GetRag");
+    .WithName("RagChat");
 
-app.MapGet("/chat", async ([FromQuery] string input,
-        [FromKeyedServices(key: Constants.ConnectionStringNames.ChatModel)] Kernel kernel) =>
+app.MapGet("/chat", async ([FromQuery] string input, [FromServices]  Kernel kernel) =>
     {
         if (input == "a") input = "In which city is the Eiffel Tower located?";
         var chat = kernel.GetRequiredService<IChatCompletionService>();
         return await chat.GetChatMessageContentAsync(input);
     })
-    .WithName("GetChat");
+    .WithName("RawChat");
 app.Run();

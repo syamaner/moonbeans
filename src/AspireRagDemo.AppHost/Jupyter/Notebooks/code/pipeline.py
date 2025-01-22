@@ -10,6 +10,7 @@ from langchain.text_splitter import (
     MarkdownHeaderTextSplitter,
 )
 from qdrant_client import QdrantClient
+from qdrant_client.http import models as rest
 import yaml
 import json
 from gitingest import ingest
@@ -250,8 +251,9 @@ class DocumentPipeline:
             
     def __setup_vector_store(self):
         """Setup vector store collection."""
-        with self.tracer.start_as_current_span("setup verctor store"):            
-            vector_size = len(self.embeddings.embed_query("test"))            
+        with self.tracer.start_as_current_span("setup verctor store"):  
+            vector_size = len(self.embeddings.embed_query("test"))      
+            self.logger.info(f"collection: {self.collection_name} vector size: {vector_size}")
             if not self.qdrant.collection_exists(self.collection_name):
                 self.logger.info(f"Collection {self.collection_name} does not exist. Will create now. Vector size is {vector_size}")
                 self.qdrant.create_collection(
