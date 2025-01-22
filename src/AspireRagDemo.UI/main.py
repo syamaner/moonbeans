@@ -14,7 +14,7 @@ st.set_page_config(
 load_dotenv()
 
 # Configure API endpoint
-API_BASE_URL = os.getenv('API_BASE_URL', 'http://localhost:5000')
+API_BASE_URL = os.getenv('services__api-service__http__0')
 
 def main():
     def call_custom_api(endpoint, query):
@@ -34,12 +34,18 @@ def main():
     user_query = st.text_input("Question")
 
     # Query button
-    if st.button('Search') and user_query:
+    if st.button('Search with context') and user_query:
         with st.spinner('Searching...'):
-            results = call_custom_api('rag', user_query)
+            results = call_custom_api('chat-with-context', user_query)
             if results:
                 st.write("Results:")
                 st.write(results)
-
+    # Query button
+    if st.button('Search without context') and user_query:
+        with st.spinner('Searching...'):
+            results = call_custom_api('chat', user_query)
+            if results:
+                st.write("Results:")
+                st.write(results)
 if __name__ == '__main__':
     main()

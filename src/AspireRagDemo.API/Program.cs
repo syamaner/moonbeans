@@ -29,36 +29,36 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.MapGet("/embedding", async ([FromQuery] string input, [FromServices] Kernel kernel ) =>
+app.MapGet("/embedding", async ([FromQuery] string query, [FromServices] Kernel kernel ) =>
     {      
         var embeddingGenerator = kernel.GetRequiredService<ITextEmbeddingGenerationService>();
-        var embeddings = await embeddingGenerator.GenerateEmbeddingsAsync([input]);
+        var embeddings = await embeddingGenerator.GenerateEmbeddingsAsync([query]);
         return embeddings;
     })
     .WithName("GetEmbeddings");
 
-app.MapGet("/vector-search", async ([FromQuery] string input,  
+app.MapGet("/vector-search", async ([FromQuery] string query,  
         [FromServices]Kernel kernel, 
         [FromServices] QdrantClient qdrantClient,
         [FromServices] IConfiguration configuration) =>
     {      
         var collection =  configuration["VectorStoreCollectionName"];
         var embeddingGenerator = kernel.GetRequiredService<ITextEmbeddingGenerationService>();
-        var vectors= await embeddingGenerator.GenerateEmbeddingsAsync([input]);
+        var vectors= await embeddingGenerator.GenerateEmbeddingsAsync([query]);
         var result = await qdrantClient.SearchAsync(collection, vectors[0], limit: 5);
         return result;
     })
     .WithName("VectorSearch");
 
-app.MapGet("/chat-with-context", async ([FromQuery] string input,  
+app.MapGet("/chat-with-context", async ([FromQuery] string query,  
         [FromServices]Kernel kernel, 
         [FromServices] QdrantClient qdrantClient,
         [FromServices] IConfiguration configuration, [FromServices]ITechnicalAssistantChat technicalAssistantChat) =>
     {
         var collection =  configuration["VectorStoreCollectionName"];
         var embeddingGenerator = kernel.GetRequiredService<ITextEmbeddingGenerationService>();
-        var vectors= await embeddingGenerator.GenerateEmbeddingsAsync([input]);
-        var result = await qdrantClient.SearchAsync(collection, vectors[0], limit: 5);
+        var vectors= await embeddingGenerator.GenerateEmbeddingsAsync([query]);
+        var result = await qdrantClient.SearchAsync(collection, vectors[0], limit: 10);
         
         var resultsTyped =  JsonSerializer.Deserialize<List<VectorQueryResult>>(result.ToString());
         var stbContext = new StringBuilder();
@@ -66,16 +66,18 @@ app.MapGet("/chat-with-context", async ([FromQuery] string input,
         {
             stbContext.AppendLine(queryResult.Payload.PageContent.Value);
         }
-        var chatOut  = await technicalAssistantChat.GetResponseAsync(stbContext.ToString(), input);
-        return chatOut;
+        var chatOut  = await technicalAssistantChat.GetResponseAsync(stbContext.ToString(), query);
+        return  new ChatResponse(chatOut, query);
     })
     .WithName("RagChat");
 
-app.MapGet("/chat", async ([FromQuery] string input, [FromServices]  Kernel kernel) =>
+app.MapGet("/chat", async ([FromQuery] string query, [FromServices]  Kernel kernel) =>
     {
-        if (input == "a") input = "In which city is the Eiffel Tower located?";
         var chat = kernel.GetRequiredService<IChatCompletionService>();
-        return await chat.GetChatMessageContentAsync(input);
+        ChatHistory history = new ChatHistory();
+        history.AddSystemMessage("You are a helpful AI assistant specialised in technical questions. \nIf you are unsure about the answer, say \"\"I cannot find the answer in the provided context.");
+        history.AddUserMessage(query);    
+        return await chat.GetChatMessageContentAsync(history);
     })
     .WithName("RawChat");
 app.Run();

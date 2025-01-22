@@ -61,22 +61,3 @@ Answer:";
         return result.ToString();
     }
 }
-
-// Example usage:
-/*
-var builder = Kernel.CreateBuilder();
-builder.AddAzureOpenAIChatCompletion(
-    deploymentName: "your-deployment-name",
-    endpoint: "your-endpoint",
-    apiKey: "your-api-key");
-    
-var kernel = builder.Build();
-var chatCompletion = kernel.GetRequiredService<IChatCompletionService>();
-
-var technicalChat = new TechnicalAssistantChat(kernel, chatCompletion);
-var response = await technicalChat.GetResponseAsync(
-    context: "Your technical context here",
-    question: "Your question here"
-);
-Console.WriteLine(response);
-*/
