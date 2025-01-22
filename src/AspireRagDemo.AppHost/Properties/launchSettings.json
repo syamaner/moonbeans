@@ -24,7 +24,8 @@
         "EMBEDDING_MODEL_PROVIDER": "Ollama",
         "CHAT_MODEL-": "phi3.5",
         "CHAT_MODEL": "gemma2:2b",
-        "CHAT_MODEL_PROVIDER": "Ollama"
+        "CHAT_MODEL_PROVIDER": "Ollama",
+        "VECTOR_STORE_COLLECTION_NAME": "rag-demo"
       }
     }
   }

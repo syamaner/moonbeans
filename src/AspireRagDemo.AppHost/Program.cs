@@ -6,7 +6,8 @@ var builder = DistributedApplication.CreateBuilder(args);
 ChatConfiguration chatConfiguration = new(Environment.GetEnvironmentVariable("CHAT_MODEL") ?? "phi3.5", 
     Environment.GetEnvironmentVariable("EMBEDDING_MODEL") ?? "mxbai-embed-large",
     Enum.Parse<ModelProvider>(Environment.GetEnvironmentVariable("CHAT_MODEL_PROVIDER")?? "Ollama"),
-    Enum.Parse<ModelProvider>(Environment.GetEnvironmentVariable("EMBEDDING_MODEL_PROVIDER")?? "Ollama"));
+    Enum.Parse<ModelProvider>(Environment.GetEnvironmentVariable("EMBEDDING_MODEL_PROVIDER")?? "Ollama"),
+    Environment.GetEnvironmentVariable("VECTOR_STORE_COLLECTION_NAME") ?? throw new InvalidOperationException("Need env variable VECTOR_STORE_COLLECTION_NAME"));
 
 // When Jupyter server is launched, this is the secret to use when logging in to manage notebooks.
 var jupyterLocalSecret = builder.AddParameter("JupyterSecret", secret: false);
@@ -36,7 +37,8 @@ var chatModel = ollama.AddModel(name: Constants.ConnectionStringNames.ChatModel,
 var embeddingModel = ollama.AddModel(name:Constants.ConnectionStringNames.EmbeddingModel, 
     chatConfiguration.EmbeddingModel);
 
-var apiService = builder.AddProject<Projects.AspireRagDemo_API>(Constants.ConnectionStringNames.ApiService) 
+var apiService = builder.AddProject<Projects.AspireRagDemo_API>(Constants.ConnectionStringNames.ApiService)    
+    .WithEnvironment("VECTOR_STORE_COLLECTION_NAME", chatConfiguration.VectorStoreConnectionName)
     .WithReference(vectorStore)
     .WithReference(chatModel)
     .WithReference(embeddingModel)
@@ -70,6 +72,7 @@ _ = builder
     .WithEnvironment("OTEL_EXPORTER_OTLP_INSECURE","true")
     .WithEnvironment("PYTHONUNBUFFERED", "0")
     .WithEnvironment("OPENAI_KEY", openAiKey.Resource.Value)
+    .WithEnvironment("VECTOR_STORE_COLLECTION_NAME", chatConfiguration.VectorStoreConnectionName)
     .WithReference(vectorStore)
     .WithReference(apiService)
     .WithReference(embeddingModel)

@@ -5,4 +5,4 @@ public enum ModelProvider
     OpenAI=1,
     HuggingFace=2
 }
-public record ChatConfiguration(string ChatModel, string EmbeddingModel, ModelProvider ChatModelProvider, ModelProvider EmbeddingModelProvider);
+public record ChatConfiguration(string ChatModel, string EmbeddingModel, ModelProvider ChatModelProvider, ModelProvider EmbeddingModelProvider, string VectorStoreConnectionName);
