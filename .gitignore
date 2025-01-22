@@ -93,5 +93,6 @@ node_repl_history
 *.scc
 doc/**/*
 data/**/*
-**/*/.DS_Store
 **/data/**/*
+**/.DS_Store
+src/AspireRagDemo.AppHost/Ollama/ZscalerRootCertificate-2048-SHA256.crt
