@@ -75,7 +75,7 @@ app.MapGet("/chat", async ([FromQuery] string query, [FromServices]  Kernel kern
     {
         var chat = kernel.GetRequiredService<IChatCompletionService>();
         ChatHistory history = new ChatHistory();
-        history.AddSystemMessage("You are a helpful AI assistant specialised in technical questions. \nIf you are unsure about the answer, say \"\"I cannot find the answer in the provided context.");
+        history.AddSystemMessage("You are a helpful AI assistant specialised in technical questions. Please minimise assumptions. \nIf you are unsure about the answer, say \"\"I cannot find the answer in the provided context.");
         history.AddUserMessage(query);    
         return await chat.GetChatMessageContentAsync(history);
     })
