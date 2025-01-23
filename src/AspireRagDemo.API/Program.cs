@@ -1,6 +1,9 @@
 using System.Text;
 using System.Text.Json;
 using AspireRagDemo.API;
+using AspireRagDemo.API.Chat;
+using AspireRagDemo.API.Extensions;
+using AspireRagDemo.API.Models;
 using AspireRagDemo.ServiceDefaults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.SemanticKernel;
@@ -17,13 +20,10 @@ builder.AddServiceDefaults();
 // Add services to the container.
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
- 
 builder.AddVectorStore();
 builder.AddSemanticKernelModels();
 
 var app = builder.Build();
-
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -58,7 +58,8 @@ app.MapGet("/chat-with-context", async ([FromQuery] string query,
         var collection =  configuration["VectorStoreCollectionName"];
         var embeddingGenerator = kernel.GetRequiredService<ITextEmbeddingGenerationService>();
         var vectors= await embeddingGenerator.GenerateEmbeddingsAsync([query]);
-        var result = await qdrantClient.SearchAsync(collection, vectors[0], limit: 10);
+        var result = await qdrantClient.SearchAsync(
+            collection ?? throw new InvalidOperationException("Collection name is null."), vectors[0], limit: 20);
         
         var resultsTyped =  JsonSerializer.Deserialize<List<VectorQueryResult>>(result.ToString());
         var stbContext = new StringBuilder();
@@ -74,8 +75,9 @@ app.MapGet("/chat-with-context", async ([FromQuery] string query,
 app.MapGet("/chat", async ([FromQuery] string query, [FromServices]  Kernel kernel) =>
     {
         var chat = kernel.GetRequiredService<IChatCompletionService>();
-        ChatHistory history = new ChatHistory();
-        history.AddSystemMessage("You are a helpful AI assistant specialised in technical questions. Please minimise assumptions. \nIf you are unsure about the answer, say \"\"I cannot find the answer in the provided context.");
+        var history = new ChatHistory();
+        history.AddSystemMessage("You are a helpful AI assistant specialised in technical questions. Please minimise assumptions. " +
+                                 "\nIf you are unsure about the answer, say \"\"I cannot find the answer in the provided context.");
         history.AddUserMessage(query);    
         return await chat.GetChatMessageContentAsync(history);
     })

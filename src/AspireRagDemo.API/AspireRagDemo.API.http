@@ -5,7 +5,7 @@ Accept: application/json
 
 ###
 # @timeout 60000
-GET  http://localhost:5026/vector-search?query="What is the purpose of this repository? Also what is the name?"
+GET  http://localhost:5026/vector-search?query="What is the purpose of .Net Aspire? Also what is the name?"
 Accept: application/json
 
 ###

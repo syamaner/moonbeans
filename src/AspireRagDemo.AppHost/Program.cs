@@ -2,12 +2,9 @@ using AspireRagDemo.AppHost;
 using AspireRagDemo.ServiceDefaults;
 
 var builder = DistributedApplication.CreateBuilder(args);
- 
-ChatConfiguration chatConfiguration = new(Environment.GetEnvironmentVariable("CHAT_MODEL") ?? "phi3.5", 
-    Environment.GetEnvironmentVariable("EMBEDDING_MODEL") ?? "mxbai-embed-large",
-    Enum.Parse<ModelProvider>(Environment.GetEnvironmentVariable("CHAT_MODEL_PROVIDER")?? "Ollama"),
-    Enum.Parse<ModelProvider>(Environment.GetEnvironmentVariable("EMBEDDING_MODEL_PROVIDER")?? "Ollama"),
-    Environment.GetEnvironmentVariable("VECTOR_STORE_COLLECTION_NAME") ?? throw new InvalidOperationException("Need env variable VECTOR_STORE_COLLECTION_NAME"));
+
+
+ChatConfiguration chatConfiguration = new();
 
 // When Jupyter server is launched, this is the secret to use when logging in to manage notebooks.
 var jupyterLocalSecret = builder.AddParameter("JupyterSecret", secret: false);

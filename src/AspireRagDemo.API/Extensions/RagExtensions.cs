@@ -1,10 +1,11 @@
+#pragma warning disable SKEXP0070
 using System.Diagnostics;
+using AspireRagDemo.API.Chat;
 using AspireRagDemo.ServiceDefaults;
 using Microsoft.SemanticKernel;
-#pragma warning disable SKEXP0070
 using Qdrant.Client;
 
-namespace AspireRagDemo.API;
+namespace AspireRagDemo.API.Extensions;
 
 public static class RagExtensions
 {

@@ -1,6 +1,6 @@
-namespace AspireRagDemo.API;
-
 using System.Text.Json.Serialization;
+
+namespace AspireRagDemo.API.Models;
 
 public class VectorQueryResult
 {
