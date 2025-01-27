@@ -31,4 +31,16 @@
       <Folder Include="Ollama\data\" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Compile Remove="Jupyter\Notebooks\docs-aspire\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Remove="Jupyter\Notebooks\docs-aspire\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="Jupyter\Notebooks\docs-aspire\**" />
+    </ItemGroup>
+
 </Project>

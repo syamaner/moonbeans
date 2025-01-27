@@ -15,6 +15,7 @@ COPY requirements.txt /app
 RUN pip3 install -r /app/requirements.txt
 
 COPY main.py /app
+COPY TraceSetup.py /app
 COPY entrypoint.sh /app
 RUN chmod +x /app/entrypoint.sh
 

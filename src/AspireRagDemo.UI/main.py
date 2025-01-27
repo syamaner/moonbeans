@@ -1,7 +1,12 @@
 import streamlit as st
-import requests
 import os
+import requests
 from dotenv import load_dotenv
+from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
+from TraceSetup import get_tracer, get_logger
+
+tracer = get_tracer()
+logger = get_logger()
 
 # Initialize Streamlit page configuration
 st.set_page_config(
@@ -9,7 +14,7 @@ st.set_page_config(
     page_icon="🔍",
     layout="wide"
 )
-
+ 
 # Load environment variables
 load_dotenv()
 
@@ -17,13 +22,20 @@ load_dotenv()
 API_BASE_URL = os.getenv('services__api-service__http__0')
 
 def main():
+  #  @tracer.start_as_current_span("call_custom_api")
     def call_custom_api(endpoint, query):
         try:
-            response = requests.get(f"{API_BASE_URL}/{endpoint}", params={'query': query})
-            response.raise_for_status()
-            return response.json()
+            with tracer.start_as_current_span("Call API") as span1:
+                carrier = {}
+                TraceContextTextMapPropagator().inject(carrier)
+                logger.info(carrier)
+                header = {"traceparent": carrier["traceparent"]}    
+                response = requests.get(f"{API_BASE_URL}/{endpoint}", params={'query': query}, headers=header)
+                response.raise_for_status()
+                return response.json()
         except requests.exceptions.RequestException as e:
             st.error(f"Error calling API: {str(e)}")
+            logger.error(f"Error calling API: {str(e)}")
             return None
 
     # Streamlit UI
