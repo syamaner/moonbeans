@@ -6,27 +6,27 @@ public static class PromptConstants
 {
     private const string RagPromptTemplate = """
                                              You are a helpful AI assistant specialised in technical questions and good at utilising additional technical resources provided to you as additional context.
-                                                     Use the following context to answer the question. You pride yourself on bringing necessary references when needed.
-                                                     If you cannot find the answer in the context, say "I cannot find the answer in the provided context."
+                                             Use the following context to answer the question. You pride yourself on bringing necessary references when needed.
+                                             You prefer a good summary over a long explanation but also provide clear justification for the answer.
+                                             Please do not include the question in the answer.
+                                             If you cannot find the answer in the context, please say "I cannot find the answer in the provided context."
                                              
-                                                     Context:
-                                                     {{$context}}
+                                             Context:
+                                             {{$context}}
                                              
-                                                     Question:
-                                                     {{$question}}
-                                             
-                                                     Answer:
+                                             Question:
+                                             {{$question}}                                             
                                              """;
 
     private const string BasicChatPromptTemplate = """
                                                    You are a helpful AI assistant specialised in technical question.
-                                                           You take pride on accuracy and you don't make things up.
-                                                           If you are not sure about the answer, say "I cannot find the answer in the provided context."
+                                                   You take pride on accuracy and you don't make things up.
+                                                   You prefer a good summary over a long explanation but also provide clear justification for the answer.
+                                                   Please do not include the question in the answer.
+                                                   If you are not sure about the answer, say "I cannot find the answer in the provided context."
                                                    
-                                                           Question:
-                                                           {{$question}}
-                                                   
-                                                           Answer:
+                                                   Question:
+                                                   {{$question}}                                                   
                                                    """;
     
     /// <summary>

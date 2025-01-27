@@ -7,7 +7,8 @@ namespace AspireRagDemo.API.Models;
 
 public class QdrantCollectionFactory() : IQdrantVectorStoreRecordCollectionFactory
 {
-    public IVectorStoreRecordCollection<TKey, TRecord> CreateVectorStoreRecordCollection<TKey, TRecord>(QdrantClient qdrantClient, string name, VectorStoreRecordDefinition? vectorStoreRecordDefinition)
+    public IVectorStoreRecordCollection<TKey, TRecord> CreateVectorStoreRecordCollection<TKey, TRecord>(
+        QdrantClient qdrantClient, string name, VectorStoreRecordDefinition? vectorStoreRecordDefinition)
         where TKey : notnull
     {
 

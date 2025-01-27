@@ -50,17 +50,19 @@ class LocalRAG:
             )
             
         # Define a better prompt template for RAG
-        self.template = """You are a helpful AI assistant specialised in technical questions and good at utilising additional technical resources provided to you as additional context.
-        Use the following context to answer the question. 
-        If you cannot find the answer in the context, say "I cannot find the answer in the provided context."
+        self.template = """
+        You are a helpful AI assistant specialised in technical questions and good at utilising additional technical resources provided to you as additional context.
+        Use the following context to answer the question. You pride yourself on bringing necessary references when needed.
+        You prefer a good summary over a long explanation but also provide clear justification for the answer.
+        Please do not include the question in the answer.
+        If you cannot find the answer in the context, please say "I cannot find the answer in the provided context."
         
         Context:
         {context}
         
         Question:
         {question}
-        
-        Answer:"""
+        """
         
         self.prompt = PromptTemplate(
             template=self.template,

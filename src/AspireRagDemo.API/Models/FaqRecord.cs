@@ -14,6 +14,6 @@ public class FaqRecord
     [VectorStoreRecordData(IsFullTextSearchable = true, StoragePropertyName = "metadata")]
     public required FileMetadata? Metadata { get; set; }
     
-    [VectorStoreRecordVector(384, DistanceFunction.CosineDistance, IndexKind.Hnsw, StoragePropertyName = "page_content_vector")]
+    [VectorStoreRecordVector(768, DistanceFunction.CosineDistance, IndexKind.Hnsw, StoragePropertyName = "page_content_vector")]
     public ReadOnlyMemory<float>? Vector { get; set; }
 }

@@ -47,12 +47,6 @@ public class FileMetadata
     public StringValue? RepositoryUrl { get; set; }
 }
 
-public class CustomValue<T>
-{    
-    [JsonPropertyName("stringValue")]
-    public string? Value { get; set; }
-}
-
 public class StringValue
 {
     [JsonPropertyName("stringValue")]
