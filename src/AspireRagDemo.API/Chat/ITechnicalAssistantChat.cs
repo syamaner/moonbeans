@@ -2,5 +2,5 @@
 
 public interface ITechnicalAssistantChat
 {
-    Task<string> GetResponseAsync(string context, string question);
+    Task<string> AnswerQuestion(string question, bool useAdditionalContext);
 }

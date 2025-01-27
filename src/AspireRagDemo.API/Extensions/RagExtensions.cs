@@ -1,8 +1,10 @@
 #pragma warning disable SKEXP0070
 using System.Diagnostics;
 using AspireRagDemo.API.Chat;
+using AspireRagDemo.API.Models;
 using AspireRagDemo.ServiceDefaults;
 using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Connectors.Qdrant;
 using Qdrant.Client;
 
 namespace AspireRagDemo.API.Extensions;
@@ -12,44 +14,50 @@ public static class RagExtensions
     public static void AddSemanticKernelModels(this WebApplicationBuilder builder)
     {
         var kernelBuilder = Kernel.CreateBuilder();
+        AddVectorStore(builder, kernelBuilder);
+        
         builder.Services.AddSingleton<ITechnicalAssistantChat, TechnicalAssistantChat>();
-        builder.Services.AddSingleton<Kernel>(sp =>
-        {
-            
-            var configuration = sp.GetRequiredService<IConfiguration>();
-            var (embeddingHttpClient, embeddingModel) =
-                GetHttpClientAndModelName(configuration, Constants.ConnectionStringNames.EmbeddingModel);
-            var (chatHttpClient, chatModel) = 
-                GetHttpClientAndModelName(configuration, Constants.ConnectionStringNames.ChatModel);
-
-            var kernel = kernelBuilder
-                .AddOllamaTextEmbeddingGeneration(embeddingModel, embeddingHttpClient,
-                    Constants.ConnectionStringNames.EmbeddingModel.ToString())
-                .AddOllamaChatCompletion(chatModel, chatHttpClient,
-                    Constants.ConnectionStringNames.ChatModel.ToString())
-                .Build();
-            return kernel;
-        });
+        
+        var (embeddingHttpClient, embeddingModel) =
+            GetHttpClientAndModelName(builder.Configuration, Constants.ConnectionStringNames.EmbeddingModel);
+        var (chatHttpClient, chatModel) =
+            GetHttpClientAndModelName(builder.Configuration, Constants.ConnectionStringNames.ChatModel);
+        
+        var kernel = kernelBuilder
+            .AddOllamaTextEmbeddingGeneration(embeddingModel, embeddingHttpClient,
+                Constants.ConnectionStringNames.EmbeddingModel)
+            .AddOllamaChatCompletion(chatModel, chatHttpClient,
+                Constants.ConnectionStringNames.ChatModel)
+            .Build();
+        builder.Services.AddSingleton(kernel);
     }
 
-    public static void AddVectorStore(this WebApplicationBuilder builder)
+    private static void AddVectorStore(WebApplicationBuilder builder, IKernelBuilder kernelBuilder)
     {
-        builder.Services.AddSingleton<QdrantClient>(sp =>
+        var configuration = builder.Configuration;
+        var connectionString = configuration.GetConnectionString(Constants.ConnectionStringNames.Qdrant);
+        var endpoint = connectionString?.Split(";")[0].Replace("Endpoint=", "");
+        var key = connectionString?.Split(";")[1].Replace("Key=", "");
+        var client = new QdrantClient(
+            new Uri(endpoint ?? throw new InvalidOperationException("Qdrant endpoint cannot be null.")), key);
+        builder.Services.AddSingleton(client);
+        
+        var options = new QdrantVectorStoreOptions
         {
-            var configuration = sp.GetRequiredService<IConfiguration>();
-            var connectionString = configuration.GetConnectionString(Constants.ConnectionStringNames.Qdrant);
-            var endpoint = connectionString?.Split(";")[0].Replace("Endpoint=", "");
-            var key = connectionString?.Split(";")[1].Replace("Key=", "");
-
-            return new QdrantClient(
-                new Uri(endpoint ?? throw new InvalidOperationException("Qdrant endpoint cannot be null.")), key);
-        });
-        builder.Services.AddQdrantVectorStore();
+            HasNamedVectors = true,
+            VectorStoreCollectionFactory = new QdrantCollectionFactory()
+        }; 
+        builder.Services.AddSingleton(options);
+        
+        builder.Services.AddQdrantVectorStore(options:options);
+        kernelBuilder.AddQdrantVectorStore(options:options);
     }
 
-    private static (HttpClient, string) GetHttpClientAndModelName(IConfiguration configuration, string connectionStringName)
-    { 
-        var connectionString = configuration.GetConnectionString(connectionStringName);
+    private static (HttpClient, string) GetHttpClientAndModelName(IConfiguration configuration,
+        string connectionStringName)
+    {
+        var connectionString = configuration.GetConnectionString(connectionStringName)
+                               ?? throw new InvalidOperationException("Qdrant connection string cannot be null.");
         var model = connectionString.Split(";")[1].Replace("Model=", "");
         Debug.Assert(connectionString != null, nameof(connectionString) + " != null");
         var uri = new Uri(connectionString.Split(";")[0].Replace("Endpoint=", ""));
@@ -60,3 +68,4 @@ public static class RagExtensions
         }, model);
     }
 }
+ 

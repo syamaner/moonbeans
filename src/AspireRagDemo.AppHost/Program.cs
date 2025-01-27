@@ -18,8 +18,8 @@ Dictionary<string, int> applicationPorts = new()
 
 var vectorStore = builder.AddQdrant(Constants.ConnectionStringNames.Qdrant)
     .WithImageTag("v1.13.0-unprivileged")
-    .WithLifetime(ContainerLifetime.Session)
-    .WithBindMount( "./data/qdrant","/qdrant/storage:z");
+    .WithLifetime(ContainerLifetime.Persistent)
+    .WithBindMount( "./data/qdrant","/qdrant/storage"); // :z
  
 // Following image is based off ollama 0.5.7 TAG and runs as non-root user.
 var ollama = builder.AddOllama(Constants.ConnectionStringNames.Ollama)
