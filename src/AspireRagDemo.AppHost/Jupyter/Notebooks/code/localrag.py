@@ -40,9 +40,14 @@ class LocalRAG:
         )      
         self.llm = ChatOllama(model=chat_config.model_name, base_url=chat_config.base_url)        
         self.qdrant = QdrantClient(url=vector_db_config.url, api_key=vector_db_config.api_key)
-        self.vector_store = QdrantVectorStore(client=self.qdrant,
-            collection_name=self.collection_name,
-            embedding=self.embeddings)
+        
+        self.vector_store = QdrantVectorStore(
+                client=self.qdrant,
+                collection_name=self.collection_name,
+                vector_name="page_content_vector",
+                embedding=self.embeddings
+            )
+            
         # Define a better prompt template for RAG
         self.template = """You are a helpful AI assistant specialised in technical questions and good at utilising additional technical resources provided to you as additional context.
         Use the following context to answer the question. 
