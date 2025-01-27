@@ -2,11 +2,11 @@
 chromadb==0.6.3
 pandas==2.2.3
 arize-phoenix==7.8.1
-ragas==0.2.11
+ragas
 umap-learn==0.5.7
 plotly==5.24.1
 unstructured==0.16.13
-langchain==0.3.14
+langchain
 gitingest==0.1.2
 qdrant-client==1.13.0
 langchain-ollama==0.2.2
@@ -15,7 +15,7 @@ opentelemetry-exporter-otlp-proto-grpc
 opentelemetry-instrumentation-langchain
 opentelemetry-distro
 opentelemetry-exporter-otlp
-libmagic
+python-magic
 langchain-community
 langchain-openai
 unstructured[md]

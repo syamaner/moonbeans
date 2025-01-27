@@ -3,61 +3,13 @@ import sys
 # allow loading modules from local directory.
 sys.path.insert(1, '/home/jovyan/work/code')
 
-from opentelemetry import trace
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
-from opentelemetry.sdk.resources import SERVICE_NAME, Resource
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from opentelemetry.instrumentation.langchain import LangchainInstrumentor
-# Logging (Experimental)
-from opentelemetry._logs import set_logger_provider
-from opentelemetry.exporter.otlp.proto.grpc._log_exporter import (
-    OTLPLogExporter
-)
-from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
-from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
-from opentelemetry.sdk.resources import Resource
-
 from config import VectorDBConfig, EmbeddingConfig, ProcessingConfig, ChatConfig
 
 import nest_asyncio
-import asyncio 
-import logging
- 
+
 # Enable nested event loops
 nest_asyncio.apply()
 
-# Initialise and Setup OpenTelemetry for the session
-resource = Resource(attributes={
-  SERVICE_NAME:  os.getenv('OTEL_SERVICE_NAME', 'jupyter-demo')
-})
-provider = TracerProvider(resource=resource)
-processor = BatchSpanProcessor(OTLPSpanExporter(endpoint=os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT")))
-provider.add_span_processor(processor)
-trace.set_tracer_provider(provider)
-
-logger_provider = LoggerProvider(
-    resource=resource
-)
-set_logger_provider(logger_provider)
-
-exporter = OTLPLogExporter(insecure=True)
-logger_provider.add_log_record_processor(BatchLogRecordProcessor(exporter))
-handler = LoggingHandler(level=logging.NOTSET, logger_provider=logger_provider)
-# Attach OTLP handler to root logger
-logging.getLogger().addHandler(handler)
-
-logging.root.setLevel(logging.INFO)
-
-LangchainInstrumentor().instrument()
-logger = logging.getLogger(__name__)
-tracer = trace.get_tracer(__name__)
-logger.handlers = list(
-    filter(
-        lambda handler: not isinstance(handler, logging.StreamHandler), 
-        logger.handlers
-    )
-)
 openAiKey = os.getenv("OPENAI_KEY")
 os.environ["OPENAI_API_KEY"] = openAiKey
 

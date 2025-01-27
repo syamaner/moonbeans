@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y \
     software-properties-common \
     git \
     && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y libmagic-dev
 
 RUN mkdir /app
 COPY requirements.txt /app

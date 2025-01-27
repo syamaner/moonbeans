@@ -29,9 +29,10 @@ class LocalRAG:
     """A class to handle local RAG operations using Ollama for both embeddings and LLM."""
     
     def __init__(self, vector_db_config: VectorDBConfig, 
-                 embedding_config: EmbeddingConfig, chat_config: ChatConfig):
-        self.logger = logging.getLogger("LocalRAG")
-        self.tracer = trace.get_tracer("LocalRAG")
+                 embedding_config: EmbeddingConfig, chat_config: ChatConfig, logger, tracer):
+
+        self.logger = logger #logging.getLogger("IngestionPipeline")
+        self.tracer = tracer #trace.get_tracer("IngestionPipeline")
         self.collection_name = vector_db_config.collection_name
         # Initialize embeddings
         self.embeddings = OllamaEmbeddings(

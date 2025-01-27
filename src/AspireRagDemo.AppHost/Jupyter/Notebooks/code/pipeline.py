@@ -2,7 +2,7 @@ from typing import List, Dict, Optional
 from pathlib import Path
 import os
 import re
-import logging
+ 
 from langchain_qdrant import QdrantVectorStore
 from langchain_ollama import OllamaEmbeddings
 from langchain.text_splitter import (
@@ -15,7 +15,7 @@ import yaml
 import json
 from gitingest import ingest
 from config import VectorDBConfig, EmbeddingConfig
-from opentelemetry import trace
+
 
 class DocumentPipeline:
     """Main document processing pipeline."""
@@ -23,10 +23,12 @@ class DocumentPipeline:
     def __init__(
         self,
         vector_db_config: VectorDBConfig,
-        embedding_config: EmbeddingConfig
+        embedding_config: EmbeddingConfig,
+        logger,
+        tracer
     ):        
-        self.logger = logging.getLogger("IngestionPipeline")
-        self.tracer = trace.get_tracer("IngestionPipeline")
+        self.logger = logger #logging.getLogger("IngestionPipeline")
+        self.tracer = tracer #trace.get_tracer("IngestionPipeline")
         self.collection_name = vector_db_config.collection_name
         # Initialize embeddings
         self.embeddings = OllamaEmbeddings(
