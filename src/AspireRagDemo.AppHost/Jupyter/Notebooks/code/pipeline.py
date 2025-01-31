@@ -1,21 +1,22 @@
-from typing import List, Dict, Optional
-from pathlib import Path
+from typing import List, Dict
 import os
-import re
- 
+from enum import Enum
 from langchain_qdrant import QdrantVectorStore
 from langchain_ollama import OllamaEmbeddings
+from langchain_openai import OpenAIEmbeddings
+from langchain_community.embeddings import (
+    HuggingFaceInferenceAPIEmbeddings,
+)
 from langchain.text_splitter import (
     RecursiveCharacterTextSplitter,
     MarkdownHeaderTextSplitter,
 )
 from qdrant_client import QdrantClient
 from qdrant_client.http import models as rest
-import yaml
-import json
 from gitingest import ingest
-from config import VectorDBConfig, EmbeddingConfig
-
+from config import VectorDBConfig, ModelConfig
+from opentelemetry import trace
+from model_provider import ModelProvider
 
 class DocumentPipeline:
     """Main document processing pipeline."""
@@ -23,20 +24,36 @@ class DocumentPipeline:
     def __init__(
         self,
         vector_db_config: VectorDBConfig,
-        embedding_config: EmbeddingConfig,
-        logger,
-        tracer
-    ):        
-        self.logger = logger #logging.getLogger("IngestionPipeline")
+        embedding_config: ModelConfig, 
+        logger, tracer):        
+        self.logger = logger # logging.getLogger("IngestionPipeline")
         self.tracer = tracer #trace.get_tracer("IngestionPipeline")
-        self.collection_name = vector_db_config.collection_name
-        # Initialize embeddings
-        self.embeddings = OllamaEmbeddings(
-            model=embedding_config.model_name,
-            base_url=embedding_config.base_url
-        ) 
+        self.vector_config = vector_db_config
+
+        self.InitEmbeddings(embedding_config)
         self.qdrant = QdrantClient(url=vector_db_config.url, api_key=vector_db_config.api_key)
         self.__setup_vector_store()
+
+    def InitEmbeddings(self, embedding_config):
+        if(embedding_config.model_provider == ModelProvider.HuggingFace):
+            self.logger.info(f"Using HuggingFace model: {embedding_config.model_name}")
+            self.embeddings = HuggingFaceInferenceAPIEmbeddings(
+                api_key=embedding_config.api_key,
+                model_name=embedding_config.model_name
+            )
+        elif(embedding_config.model_provider == ModelProvider.OpenAI):
+            
+            self.logger.info(f"Using OpenAI model: {embedding_config.model_name}")  
+            self.embeddings = OpenAIEmbeddings(
+                model=embedding_config.model_name,
+                api_key=embedding_config.api_key
+            )
+        else:
+            self.logger.info(f"Using Ollama model: {embedding_config.model_name}, base url: {embedding_config.base_url}")
+            self.embeddings = OllamaEmbeddings(
+                model=embedding_config.model_name,
+                base_url=embedding_config.base_url
+            )
 
     def process_repository(self, repo_url: str):
         """Process a repository and store its documents in the vector store."""        
@@ -48,10 +65,8 @@ class DocumentPipeline:
             print("done processing the repository.")
             self.logger.info("done processing the repository.")
             
-            
     def process_single_file(self, file_path: str, repo_url: str):
-        """Process a file that contains concancated files in the repository."""
-       
+        """Process a file that contains concatenated files in the repository."""       
         with self.tracer.start_as_current_span("process file"):
             with open(file_path, 'r') as file:
                 content = file.read()
@@ -208,31 +223,25 @@ class DocumentPipeline:
             
     def __setup_vector_store(self):
         """Setup vector store collection."""
-        with self.tracer.start_as_current_span("setup verctor store"):  
+        with self.tracer.start_as_current_span("setup vector store"):  
             vector_size = len(self.embeddings.embed_query("test"))      
-            self.logger.info(f"collection: {self.collection_name} vector size: {vector_size}")
-            if not self.qdrant.collection_exists(self.collection_name):
-                self.logger.info(f"Collection {self.collection_name} does not exist. Will create now. Vector size is {vector_size}")
+            self.logger.info(f"collection: {self.vector_config.collection_name} vector size: {vector_size}, vector name: {self.vector_config.vector_name}")
+            if not self.qdrant.collection_exists(self.vector_config.collection_name):
+                self.logger.info(f"Collection {self.vector_config.collection_name} does not exist. Will create now. Vector size is {vector_size}")
                 self.qdrant.create_collection(
-                    collection_name=self.collection_name,
+                    collection_name=self.vector_config.collection_name,
                     vectors_config={
-                        "page_content_vector": rest.VectorParams(size=vector_size, distance=rest.Distance.COSINE),
+                        "page_content_vector": rest.VectorParams(size=vector_size, 
+                                                                 distance=rest.Distance.COSINE),
                     })
-                # self.qdrant.create_collection(
-                #     collection_name=self.collection_name,
-                #     vectors_config=rest.VectorParams(
-                #         size=vector_size,
-                #         distance=rest.Distance.COSINE
-                #     )
-                # )
-                self.logger.info(f"Created collection: {self.collection_name}")
+                self.logger.info(f"Created collection: {self.vector_config.collection_name}")
             else:
-                self.logger.info(f"Collection {self.collection_name} already exists")
+                self.logger.info(f"Collection {self.vector_config.collection_name} already exists")
  
             self.vector_store = QdrantVectorStore(
                 client=self.qdrant,
-                collection_name=self.collection_name,
-                vector_name="page_content_vector",
+                collection_name=self.vector_config.collection_name,
+                vector_name=self.vector_config.vector_name,
                 embedding=self.embeddings
             )
             

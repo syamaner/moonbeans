@@ -18,12 +18,15 @@
         "DOTNET_ENVIRONMENT": "Development",
         "DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS": "true",
         
-        "EMBEDDING_MODEL": "mxbai-embed-large",
-        "EMBEDDING_MODEL_PROVIDER": "OllamaHost",
-        "EMBEDDING_MODEL_HOST_URI":  "http://localhost:11434;Model=mxbai-embed-large",
-        "CHAT_MODEL": "mistral",
-        "CHAT_MODEL_PROVIDER": "OllamaHost",
-        "CHAT_MODEL_HOST_URI":  "http://localhost:11434;Model=mistral",
+        "EMBEDDING_MODEL": "text-embedding-3-large",
+        "EMBEDDING_MODEL--": "nomic-embed-text",
+        "EMBEDDING_MODEL_PROVIDER": "OpenAI",
+        
+        "CHAT_MODEL": "gpt-4o-mini",
+        "CHAT_MODEL--": "mistral",
+        "CHAT_MODEL_PROVIDER": "OpenAI",
+        
+        "VECTOR_STORE_VECTOR_NAME": "page_content_vector",
         "---ONLY-IF-USING_PODMAN---DOTNET_ASPIRE_CONTAINER_RUNTIME": "podman"
       }
     }

@@ -1,4 +1,4 @@
-namespace AspireRagDemo.AppHost;
+namespace AspireRagDemo.ServiceDefaults;
 
 public enum ModelProvider
 {

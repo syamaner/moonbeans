@@ -1,3 +1,4 @@
+using AspireRagDemo.API;
 using AspireRagDemo.API.Chat;
 using AspireRagDemo.API.Extensions;
 using AspireRagDemo.API.Models;
@@ -17,6 +18,7 @@ builder.AddServiceDefaults();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 builder.AddSemanticKernelModels();
+builder.Services.Configure<ModelConfiguration>(builder.Configuration.GetSection("ModelConfiguration"));
 
 var app = builder.Build();
 if (app.Environment.IsDevelopment())
@@ -27,10 +29,9 @@ if (app.Environment.IsDevelopment())
 app.MapGet("/vector-search", async ([FromQuery] string query,
         [FromServices] Kernel kernel,
         [FromServices] QdrantClient qdrantClient,
-        [FromServices] IConfiguration configuration) =>
+        [FromServices] ModelConfiguration configuration) =>
     {
-        var collectionName = configuration["VectorStoreCollectionName"] 
-                             ?? throw new InvalidOperationException("Configuration parameter VectorStoreCollectionName cannot be null.");
+        var collectionName = configuration.VectorStoreCollectionName;
         var embeddingGenerator = kernel.GetRequiredService<ITextEmbeddingGenerationService>();
         var vectors = await embeddingGenerator.GenerateEmbeddingsAsync([query]);
         var result = await qdrantClient.SearchAsync(collectionName, vectors[0], limit: 5);

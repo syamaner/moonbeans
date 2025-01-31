@@ -1,51 +1,38 @@
 from typing import List, Dict
-from langchain_ollama import ChatOllama
+from langchain_ollama import ChatOllama, OllamaEmbeddings
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_community.embeddings import ( 
+    HuggingFaceInferenceAPIEmbeddings,
+)
+from langchain_community.chat_models import ( ChatHuggingFace )
 from langchain.prompts import PromptTemplate
-from langchain.schema.runnable import RunnablePassthrough
 from langchain.schema import StrOutputParser
-from langchain.prompts import ChatPromptTemplate
 from typing import List, Dict
-from langchain_ollama import ChatOllama
 from langchain.prompts import PromptTemplate
-from langchain.schema.runnable import RunnablePassthrough
 from langchain.schema import StrOutputParser
-from langchain.prompts import ChatPromptTemplate
-from config import VectorDBConfig, EmbeddingConfig, ProcessingConfig, CodeEntity, ChatConfig
-
-
+from config import VectorDBConfig, ModelConfig
 from qdrant_client import QdrantClient
-
 from langchain_qdrant import QdrantVectorStore
-from langchain_ollama import OllamaEmbeddings
-
 import logging
 from opentelemetry import trace
-logging.basicConfig()
-logging.root.setLevel(logging.INFO)
-from opentelemetry.instrumentation.langchain import LangchainInstrumentor
-LangchainInstrumentor().instrument()
+from model_provider import ModelProvider
 
 class LocalRAG:
     """A class to handle local RAG operations using Ollama for both embeddings and LLM."""
     
     def __init__(self, vector_db_config: VectorDBConfig, 
-                 embedding_config: EmbeddingConfig, chat_config: ChatConfig, logger, tracer):
-
-        self.logger = logger #logging.getLogger("IngestionPipeline")
-        self.tracer = tracer #trace.get_tracer("IngestionPipeline")
-        self.collection_name = vector_db_config.collection_name
-        # Initialize embeddings
-        self.embeddings = OllamaEmbeddings(
-            model=embedding_config.model_name,
-            base_url=embedding_config.base_url
-        )      
-        self.llm = ChatOllama(model=chat_config.model_name, base_url=chat_config.base_url)        
-        self.qdrant = QdrantClient(url=vector_db_config.url, api_key=vector_db_config.api_key)
+                 embedding_config: ModelConfig, chat_config: ModelConfig):
+        self.logger = logging.getLogger("local-rag") #logging.getLogger("IngestionPipeline")
+        self.tracer = trace.get_tracer("local-rag")
         
+        self.InitEmbeddings(embedding_config)
+        self.InitChatModel(chat_config)
+
+        self.qdrant = QdrantClient(url=vector_db_config.url, api_key=vector_db_config.api_key)
         self.vector_store = QdrantVectorStore(
                 client=self.qdrant,
-                collection_name=self.collection_name,
-                vector_name="page_content_vector",
+                collection_name=vector_db_config.collection_name,
+                vector_name=vector_db_config.vector_name,
                 embedding=self.embeddings
             )
             
@@ -69,6 +56,46 @@ class LocalRAG:
             input_variables=["context", "question"]
         )
         
+    def InitEmbeddings(self, embedding_config: ModelConfig):
+        if(embedding_config.model_provider == ModelProvider.HuggingFace):
+            self.logger.info(f"Using HuggingFace embedding model: {embedding_config.model_name}")
+            self.embeddings = HuggingFaceInferenceAPIEmbeddings(
+                api_key=embedding_config.api_key,
+                model_name=embedding_config.model_name
+            )
+        elif(embedding_config.model_provider == ModelProvider.OpenAI):            
+            self.logger.info(f"Using OpenAI embedding model: {embedding_config.model_name}")  
+            self.embeddings = OpenAIEmbeddings(
+                model=embedding_config.model_name,
+                api_key=embedding_config.api_key
+            )
+        else:
+            self.logger.info(f"Using Ollama embedding model: {embedding_config.model_name}, base url: {embedding_config.base_url}")
+            self.embeddings = OllamaEmbeddings(
+                model=embedding_config.model_name,
+                base_url=embedding_config.base_url
+            )
+   
+    def InitChatModel(self, chat_config: ModelConfig):
+        if(chat_config.model_provider == ModelProvider.HuggingFace):
+            self.logger.info(f"Using HuggingFace chat model: {chat_config.model_name}")
+            self.llm = ChatHuggingFace(
+                api_key=chat_config.api_key,
+                model_name=chat_config.model_name
+            )
+        elif(chat_config.model_provider == ModelProvider.OpenAI):            
+            self.logger.info(f"Using OpenAI chat model: {chat_config.model_name}")  
+            self.llm = ChatOpenAI(
+                model=chat_config.model_name,
+                api_key=chat_config.api_key
+            )
+        else:
+            self.logger.info(f"Using Ollama chat model: {chat_config.model_name}, base url: {chat_config.base_url}")
+            self.llm = ChatOllama(
+                model=chat_config.model_name,
+                base_url=chat_config.base_url
+            )
+            
     def format_docs(self, docs: List[Dict]) -> str:
         """Format the retrieved documents into a string."""
         with self.tracer.start_as_current_span("rag format_docs"):
