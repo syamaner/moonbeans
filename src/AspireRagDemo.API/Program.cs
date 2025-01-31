@@ -53,4 +53,5 @@ app.MapGet("/chat", async ([FromQuery] string query, [FromServices] ITechnicalAs
         return new ChatResponse(answer, query);
     })
     .WithName("BasicChat");
+
 app.Run();

@@ -9,6 +9,3 @@ USER 65532:65532
 
 ENTRYPOINT ["/bin/ollama"]
 CMD ["serve"]
-
-#-v ollama:/root/.ollama -p 11434:11434 --name ollama 
-#http://localhost:11434/api/tags 

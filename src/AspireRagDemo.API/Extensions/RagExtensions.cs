@@ -1,7 +1,6 @@
 #pragma warning disable SKEXP0070
 using System.Diagnostics;
 using AspireRagDemo.API.Chat;
-using AspireRagDemo.API.Models;
 using AspireRagDemo.ServiceDefaults;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.Qdrant;
@@ -11,6 +10,7 @@ namespace AspireRagDemo.API.Extensions;
 
 public static class RagExtensions
 {
+    private const long HttpTimeoutMinutes= 10;
     public static void AddSemanticKernelModels(this WebApplicationBuilder builder)
     {
         var kernelBuilder = Kernel.CreateBuilder();
@@ -57,14 +57,15 @@ public static class RagExtensions
         string connectionStringName)
     {
         var connectionString = configuration.GetConnectionString(connectionStringName)
-                               ?? throw new InvalidOperationException("Qdrant connection string cannot be null.");
-        var model = connectionString.Split(";")[1].Replace("Model=", "");
+                               ?? throw new InvalidOperationException("Model connection string cannot be null.");
+        var parts = connectionString.Split(";");
+        var model = parts[1].Replace("Model=", "");
         Debug.Assert(connectionString != null, nameof(connectionString) + " != null");
-        var uri = new Uri(connectionString.Split(";")[0].Replace("Endpoint=", ""));
+ 
         return (new HttpClient
         {
-            Timeout = TimeSpan.FromMinutes(10),
-            BaseAddress = uri
+            Timeout = TimeSpan.FromMinutes(HttpTimeoutMinutes),
+            BaseAddress = new Uri(parts[0])
         }, model);
     }
 }

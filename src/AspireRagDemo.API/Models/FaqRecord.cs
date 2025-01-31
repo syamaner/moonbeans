@@ -1,4 +1,3 @@
-using Google.Protobuf.Collections;
 using Microsoft.Extensions.VectorData;
 
 namespace AspireRagDemo.API.Models;

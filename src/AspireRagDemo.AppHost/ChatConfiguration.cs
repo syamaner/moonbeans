@@ -1,44 +1,61 @@
 namespace AspireRagDemo.AppHost;
-public enum ModelProvider
-{
-    Ollama=0,
-    OpenAI=1,
-    HuggingFace=2
-}
+
 public record ChatConfiguration
 {
     public ChatConfiguration()
     { 
-        this.ChatModel = Environment.GetEnvironmentVariable("CHAT_MODEL") ?? "phi3.5";
-        this.EmbeddingModel = Environment.GetEnvironmentVariable("EMBEDDING_MODEL") ?? "mxbai-embed-large";
-        this.ChatModelProvider = Enum.Parse<ModelProvider>(Environment.GetEnvironmentVariable("CHAT_MODEL_PROVIDER") ?? "Ollama");
-        this.EmbeddingModelProvider = Enum.Parse<ModelProvider>(Environment.GetEnvironmentVariable("EMBEDDING_MODEL_PROVIDER") ?? "Ollama");
+        EmbeddingModel = Environment.GetEnvironmentVariable("EMBEDDING_MODEL") ?? "mxbai-embed-large";
+        EmbeddingModelHostUri = Environment.GetEnvironmentVariable("EMBEDDING_MODEL_HOST_URI") ?? "";
+        EmbeddingModelProvider = GetModelProvider(EmbeddingModelHostUri);
         
-        this.VectorStoreConnectionName =
+        ChatModel = Environment.GetEnvironmentVariable("CHAT_MODEL") ?? "phi3.5";
+        ChatModelHostUri = Environment.GetEnvironmentVariable("CHAT_MODEL_HOST_URI") ?? "";
+        ChatModelProvider = GetModelProvider(ChatModelHostUri);
+        
+        VectorStoreConnectionName =
             $"{StripSpecialCharacters(this.ChatModel)}{StripSpecialCharacters(this.EmbeddingModel)}";
+    }
+    
+    private static ModelProvider  GetModelProvider(string? modelUri)
+    { 
+        if(modelUri==null)
+            return ModelProvider.Ollama;
+        
+        if(modelUri.Contains("host.",StringComparison.InvariantCultureIgnoreCase)
+            || modelUri.Contains("localhost",StringComparison.InvariantCultureIgnoreCase))
+            return ModelProvider.OllamaHost;
+        if(modelUri.Contains("hugging",StringComparison.InvariantCultureIgnoreCase))
+            return ModelProvider.HuggingFace;
+        
+        return modelUri.Contains("openai",StringComparison.InvariantCultureIgnoreCase) 
+            ? ModelProvider.OpenAI : ModelProvider.Ollama;
     }
     private static string StripSpecialCharacters(string input)
     {
         if (string.IsNullOrEmpty(input))
             return input;
-        
-        return new string(input.Where(c => 
-            (c >= 'a' && c <= 'z') || 
-            (c >= 'A' && c <= 'Z') || 
-            c == '-').ToArray());
+
+        return new string(input.Where(c =>
+            c is >= 'a' and <= 'z' or >= 'A' and <= 'Z' or '-').ToArray());
     }
     public string ChatModel { get; init; }
-    public string EmbeddingModel { get; init; }
+    public string ChatModelHostUri { get; init; }
     public ModelProvider ChatModelProvider { get; init; }
+    public string EmbeddingModel { get; init; }
     public ModelProvider EmbeddingModelProvider { get; init; }
+    public string EmbeddingModelHostUri { get; init; } 
     public string VectorStoreConnectionName { get; init; }
-
-    public void Deconstruct(out string ChatModel, out string EmbeddingModel, out ModelProvider ChatModelProvider, out ModelProvider EmbeddingModelProvider, out string VectorStoreConnectionName)
+        
+    public void Deconstruct(out string chatModel, out string chatModelHostUri, out ModelProvider chatModelProvider,
+        out string embeddingModel, out string embeddingModelHostUri, out ModelProvider embeddingModelProvider,
+        out string vectorStoreConnectionName)
     {
-        ChatModel = this.ChatModel;
-        EmbeddingModel = this.EmbeddingModel;
-        ChatModelProvider = this.ChatModelProvider;
-        EmbeddingModelProvider = this.EmbeddingModelProvider;
-        VectorStoreConnectionName = this.VectorStoreConnectionName;
+        chatModel = ChatModel;
+        chatModelHostUri = ChatModelHostUri;
+        chatModelProvider = ChatModelProvider;
+        embeddingModel = EmbeddingModel;
+        embeddingModelHostUri = EmbeddingModelHostUri;
+        embeddingModelProvider = EmbeddingModelProvider;
+        vectorStoreConnectionName = VectorStoreConnectionName;
     }
 }

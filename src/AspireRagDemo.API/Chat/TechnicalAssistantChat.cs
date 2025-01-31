@@ -13,12 +13,15 @@ public class TechnicalAssistantChat(
     IConfiguration configuration,
     ILogger<TechnicalAssistantChat> logger) : ITechnicalAssistantChat
 {
+    private const short TopSearchResults = 20;
+
     private readonly ITextEmbeddingGenerationService _embeddingGenerator =
         kernel.GetRequiredService<ITextEmbeddingGenerationService>();
 
     private readonly IVectorStoreRecordCollection<ulong, FaqRecord> _faqCollection =
-        vectorStore.GetCollection<ulong, FaqRecord>(configuration["VectorStoreCollectionName"] 
-        ?? throw new InvalidOperationException( $"Configuration variable VectorStoreCollectionName can't be empty."));
+        vectorStore.GetCollection<ulong, FaqRecord>(configuration["VectorStoreCollectionName"]
+                                                    ?? throw new InvalidOperationException(
+                                                        $"Configuration variable VectorStoreCollectionName can't be empty."));
 
     /// <summary>
     /// Answer the question based on the provided question and optionally using additional context.
@@ -39,21 +42,31 @@ public class TechnicalAssistantChat(
         }
         catch (Exception e)
         {
-            logger.LogError(e, "Error while answering the question. Additional context required? : {useAdditionalContext}", useAdditionalContext);
+            logger.LogError(e,
+                "Error while answering the question. Additional context required? : {useAdditionalContext}",
+                useAdditionalContext);
             return "I am sorry, I am unable to answer the question at the moment.";
         }
     }
 
     private async Task<string> AnswerWithoutAdditionalContext(string question)
     {
-        var arguments = new KernelArguments
+        try
         {
-            { "question", question }
-        };
+            var arguments = new KernelArguments
+            {
+                { "question", question }
+            };
 
-        var kernelFunction = kernel.CreateFunctionFromPrompt(PromptConstants.BasicPromptConfig);
-        var result = await kernelFunction.InvokeAsync(kernel, arguments);
-        return result.ToString();
+            var kernelFunction = kernel.CreateFunctionFromPrompt(PromptConstants.BasicPromptConfig);
+            var result = await kernelFunction.InvokeAsync(kernel, arguments);
+            return result.ToString();
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e, "Error while answering the question without additional context.");
+            return "I am sorry, I am unable to answer the question at the moment.";
+        }
     }
 
     private async Task<string> AnswerWithAdditionalContext(string context, string question)
@@ -68,7 +81,7 @@ public class TechnicalAssistantChat(
         var result = await kernelFunction.InvokeAsync(kernel, arguments);
         return result.ToString();
     }
-    
+
     /// <summary>
     /// Get context from the vector store based on the question.
     ///  This method uses the vector store to search for the most relevant context based on the question:
@@ -80,9 +93,13 @@ public class TechnicalAssistantChat(
     /// <returns>Vector Search Results.</returns>
     private async Task<string> GetContextFromVectorStore(string question)
     {
-        var questionVectors = await _embeddingGenerator.GenerateEmbeddingsAsync([question]);
+        var questionVectors =
+            await _embeddingGenerator.GenerateEmbeddingsAsync([question]);
+
         var stbContext = new StringBuilder();
-        var searchResults = await _faqCollection.VectorizedSearchAsync(questionVectors[0], new VectorSearchOptions() { Top = 20 });
+
+        var searchResults = await _faqCollection.VectorizedSearchAsync(questionVectors[0],
+            new VectorSearchOptions() { Top = TopSearchResults });
 
         await foreach (var item in searchResults.Results)
         {

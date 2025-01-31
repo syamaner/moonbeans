@@ -1,4 +1,4 @@
-@AspireRagDemo.API_HostAddress = http://localhost:56288
+@AspireRagDemo.API_HostAddress = http://localhost:5026
 
 GET  http://localhost:5026/embedding?query=hello
 Accept: application/json

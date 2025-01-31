@@ -1,9 +1,11 @@
+using AspireRagDemo.API.Models;
 using Microsoft.Extensions.VectorData;
 using Microsoft.SemanticKernel.Connectors.Qdrant;
 using Qdrant.Client;
+
 #pragma warning disable CS8603 // Possible null reference return.
 
-namespace AspireRagDemo.API.Models;
+namespace AspireRagDemo.API.Extensions;
 
 public class QdrantCollectionFactory() : IQdrantVectorStoreRecordCollectionFactory
 {

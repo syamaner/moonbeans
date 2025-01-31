@@ -1,8 +1,9 @@
+using AspireRagDemo.API.Models;
 using AspireRagDemo.ServiceDefaults;
 using Microsoft.Extensions.VectorData;
 using Qdrant.Client.Grpc;
 
-namespace AspireRagDemo.API.Models;
+namespace AspireRagDemo.API.Extensions;
 
 public class FaqRecordMapper : IVectorStoreRecordMapper<FaqRecord, PointStruct>
 {
@@ -25,13 +26,12 @@ public class FaqRecordMapper : IVectorStoreRecordMapper<FaqRecord, PointStruct>
                 .MergeFrom(qdrantFields);
         }
 
-        if (dataModel.Vector != null)
-        {
-            var namedVectors = new NamedVectors();
-            namedVectors.Vectors.Add(Constants.ConnectionStringNames.FaqVectorName,
-                dataModel.Vector.Value.ToArray());
-            pointStruct.Vectors.Vectors_ = namedVectors;
-        }
+        if (dataModel.Vector == null) return pointStruct;
+        
+        var namedVectors = new NamedVectors();
+        namedVectors.Vectors.Add(Constants.ConnectionStringNames.FaqVectorName,
+            dataModel.Vector.Value.ToArray());
+        pointStruct.Vectors.Vectors_ = namedVectors;
 
         return pointStruct;
     }

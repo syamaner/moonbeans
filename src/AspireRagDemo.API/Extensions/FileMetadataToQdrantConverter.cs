@@ -1,9 +1,11 @@
+using AspireRagDemo.API.Models;
 using Google.Protobuf.Collections;
 using Qdrant.Client.Grpc;
+
 #pragma warning disable CS8603 // Possible null reference return.
 #pragma warning disable CS8604 // Possible null reference argument.
 
-namespace AspireRagDemo.API.Models;
+namespace AspireRagDemo.API.Extensions;
 
 public static class FileMetadataToQdrantConverter
 {
@@ -46,12 +48,11 @@ public static class FileMetadataToQdrantConverter
 
     private static void AddIntegerField(MapField<string, Value> fields, string key, IntegerValue value)
     {
-        if (value?.Value != null)
+        if (value?.Value == null) return;
+        
+        if (long.TryParse(value.Value, out var parsedValue))
         {
-            if (long.TryParse(value.Value, out long parsedValue))
-            {
-                fields[key] = new Value { IntegerValue = parsedValue };
-            }
+            fields[key] = new Value { IntegerValue = parsedValue };
         }
     }
 
