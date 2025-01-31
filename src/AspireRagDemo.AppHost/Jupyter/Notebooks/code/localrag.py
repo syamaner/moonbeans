@@ -25,8 +25,8 @@ class LocalRAG:
         self.logger = logging.getLogger("local-rag") #logging.getLogger("IngestionPipeline")
         self.tracer = trace.get_tracer("local-rag")
         
-        self.InitEmbeddings(embedding_config)
-        self.InitChatModel(chat_config)
+        self.__init_embeddings(embedding_config)
+        self.__init_chatModel(chat_config)
 
         self.qdrant = QdrantClient(url=vector_db_config.url, api_key=vector_db_config.api_key)
         self.vector_store = QdrantVectorStore(
@@ -39,10 +39,11 @@ class LocalRAG:
         # Define a better prompt template for RAG
         self.template = """
         You are a helpful AI assistant specialised in technical questions and good at utilising additional technical resources provided to you as additional context.
-        Use the following context to answer the question. You pride yourself on bringing necessary references when needed.
+        Use the following context to answer the question. You always bringing necessary references.
         You prefer a good summary over a long explanation but also provide clear justification for the answer.
-        Please do not include the question in the answer.
-        If you cannot find the answer in the context, please say "I cannot find the answer in the provided context."
+        If the question has absolutely no relevance to the context, please answer "I don't know the answer."
+        Please do not include the question in the answer. You can sometimes make educated guesses if the context can imply the answer.
+                                             
         
         Context:
         {context}
@@ -56,7 +57,7 @@ class LocalRAG:
             input_variables=["context", "question"]
         )
         
-    def InitEmbeddings(self, embedding_config: ModelConfig):
+    def __init_embeddings(self, embedding_config: ModelConfig):
         if(embedding_config.model_provider == ModelProvider.HuggingFace):
             self.logger.info(f"Using HuggingFace embedding model: {embedding_config.model_name}")
             self.embeddings = HuggingFaceInferenceAPIEmbeddings(
@@ -76,7 +77,7 @@ class LocalRAG:
                 base_url=embedding_config.base_url
             )
    
-    def InitChatModel(self, chat_config: ModelConfig):
+    def __init_chatModel(self, chat_config: ModelConfig):
         if(chat_config.model_provider == ModelProvider.HuggingFace):
             self.logger.info(f"Using HuggingFace chat model: {chat_config.model_name}")
             self.llm = ChatHuggingFace(
@@ -96,7 +97,7 @@ class LocalRAG:
                 base_url=chat_config.base_url
             )
             
-    def format_docs(self, docs: List[Dict]) -> str:
+    def __format_docs(self, docs: List[Dict]) -> str:
         """Format the retrieved documents into a string."""
         with self.tracer.start_as_current_span("rag format_docs"):
             return "\n\n".join(doc.page_content for doc in docs)
@@ -104,7 +105,7 @@ class LocalRAG:
     def retrieve_and_answer(self, question: str, k: int = 15) -> str:
         # First retrieve the documents
         retrieved_docs = self.vector_store.similarity_search(question, k=k)
-        formatted_context = self.format_docs(retrieved_docs)
+        formatted_context = self.__format_docs(retrieved_docs)
         # Create and execute the RAG chain
         chain = (
             self.prompt | 

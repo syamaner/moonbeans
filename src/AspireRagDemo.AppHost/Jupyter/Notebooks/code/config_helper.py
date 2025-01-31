@@ -35,7 +35,6 @@ class ConfigHelper:
         model_base_url:str = ''
         try:
             provider = ModelProvider[embedding_model_provider]
-            print(provider)  # Output: ModelProvider.OllamaHost
         except KeyError:
             print(f"Invalid model provider: {embedding_model_provider}")
             
@@ -55,7 +54,6 @@ class ConfigHelper:
         model_base_url:str = ''
         try:
             provider = ModelProvider[chat_model_provider]
-            print(provider)  # Output: ModelProvider.OllamaHost
         except KeyError:
             print(f"Invalid model provider: {chat_model_provider}")
         if provider == ModelProvider.OllamaHost or provider == ModelProvider.Ollama:

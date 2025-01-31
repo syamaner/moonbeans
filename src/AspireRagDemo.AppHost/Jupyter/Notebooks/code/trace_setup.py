@@ -13,6 +13,10 @@ from opentelemetry.exporter.otlp.proto.grpc._log_exporter import (
 from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
 from opentelemetry.sdk._logs.export import BatchLogRecordProcessor
  
+from opentelemetry.instrumentation.qdrant import QdrantInstrumentor
+
+_telemetryInitialised = False
+_loggingInitialised = False
 
 resource = Resource(attributes={
     SERVICE_NAME:  os.getenv('OTEL_SERVICE_NAME', 'jupyter-notebook')
@@ -22,15 +26,26 @@ def get_otlp_exporter():
     return OTLPSpanExporter(endpoint=os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT"))
 
 def get_tracer():
+    global _telemetryInitialised
+    if _telemetryInitialised == True:
+        return trace.get_tracer(__name__)
+    
+    _telemetryInitialised = True
     span_exporter = get_otlp_exporter()
     processor = BatchSpanProcessor(span_exporter)
     provider = TracerProvider(resource=resource)
     provider.add_span_processor(processor)
     trace.set_tracer_provider(provider)
     LangchainInstrumentor().instrument()
+    QdrantInstrumentor().instrument()
     return trace.get_tracer(__name__)
 
 def get_logger():
+    global _loggingInitialised
+    if _loggingInitialised == True:
+        return logging.getLogger(__name__)
+    
+    _loggingInitialised = True
     logger_provider = LoggerProvider(
         resource=resource
     )
@@ -38,17 +53,19 @@ def get_logger():
     exporter = OTLPLogExporter(insecure=True)
     logger_provider.add_log_record_processor(BatchLogRecordProcessor(exporter))
     handler = LoggingHandler(level=logging.NOTSET, logger_provider=logger_provider)
-    # Attach OTLP handler to root logger
+
     logging.getLogger().addHandler(handler)    
     logging.root.setLevel(logging.INFO)
-    logger =logging.getLogger(__name__)
+    # Suppress logging from specific libraries
     logging.getLogger("requests").setLevel(logging.WARNING)
     logging.getLogger("urllib3").setLevel(logging.WARNING)
     logging.getLogger("httpx").setLevel(logging.WARNING)
+    
+    logger = logging.getLogger(__name__)
     logger.handlers = list(
         filter(
             lambda handler: not isinstance(handler, logging.StreamHandler), 
             logger.handlers
         )
-    ) 
+    )
     return logger

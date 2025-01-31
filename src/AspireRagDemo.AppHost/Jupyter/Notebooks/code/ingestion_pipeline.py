@@ -17,17 +17,14 @@ from gitingest import ingest
 from config import VectorDBConfig, ModelConfig
 from opentelemetry import trace
 from model_provider import ModelProvider
+import logging
+from opentelemetry import trace
 
-class DocumentPipeline:
-    """Main document processing pipeline."""
-    
-    def __init__(
-        self,
-        vector_db_config: VectorDBConfig,
-        embedding_config: ModelConfig, 
-        logger, tracer):        
-        self.logger = logger # logging.getLogger("IngestionPipeline")
-        self.tracer = tracer #trace.get_tracer("IngestionPipeline")
+class IngestionPipeline:
+    """Main document processing pipeline."""    
+    def __init__(self, vector_db_config: VectorDBConfig, embedding_config: ModelConfig):        
+        self.logger =  logging.getLogger(__name__)
+        self.tracer = trace.get_tracer(__name__)
         self.vector_config = vector_db_config
 
         self.InitEmbeddings(embedding_config)
@@ -41,8 +38,7 @@ class DocumentPipeline:
                 api_key=embedding_config.api_key,
                 model_name=embedding_config.model_name
             )
-        elif(embedding_config.model_provider == ModelProvider.OpenAI):
-            
+        elif(embedding_config.model_provider == ModelProvider.OpenAI):            
             self.logger.info(f"Using OpenAI model: {embedding_config.model_name}")  
             self.embeddings = OpenAIEmbeddings(
                 model=embedding_config.model_name,
@@ -55,25 +51,37 @@ class DocumentPipeline:
                 base_url=embedding_config.base_url
             )
 
-    def process_repository(self, repo_url: str):
+    def process_repository(self, repo_url: str, drop_existing: bool = False):
         """Process a repository and store its documents in the vector store."""        
         with self.tracer.start_as_current_span("process repository"):
             summary, tree, content = ingest(repo_url, include_patterns=["*.md","*.yml","*.yaml"])
             self.logger.info(summary)
             chunks = self.__chunk_content(content, repo_url)
-            self.vector_store.add_documents(chunks)
-            print("done processing the repository.")
-            self.logger.info("done processing the repository.")
             
-    def process_single_file(self, file_path: str, repo_url: str):
+            if drop_existing:
+                self.logger.info("Dropping existing collection...")
+                self.qdrant.delete_collection(self.vector_config.collection_name)
+                self.__setup_vector_store()  
+            with self.tracer.start_as_current_span("add documents to vector store"):
+                self.vector_store.add_documents(chunks)
+                print("done processing the repository.")
+                self.logger.info("done processing the repository.")
+            
+    def process_single_file(self, file_path: str, repo_url: str, drop_existing: bool = False):
         """Process a file that contains concatenated files in the repository."""       
         with self.tracer.start_as_current_span("process file"):
             with open(file_path, 'r') as file:
                 content = file.read()
             chunks = self.__chunk_content(content, repo_url)
-            self.vector_store.add_documents(chunks)
-            print("done processing the repository.")
-            self.logger.info("done processing the repository.")
+            if drop_existing:
+                self.logger.info("Dropping existing collection...")
+                self.qdrant.delete_collection(self.vector_config.collection_name)
+                self.__setup_vector_store()
+            self.logger.info("Adding documents to the vector store...")    
+            with self.tracer.start_as_current_span("add documents to vector store"):
+                self.vector_store.add_documents(chunks) 
+                print("done processing the repository.")
+                self.logger.info("done processing the repository.")
 
     def __chunk_content(self, content: str, repo_url: str):
         """Process repository content using file-type specific chunking with rich metadata."""
@@ -238,7 +246,7 @@ class DocumentPipeline:
             else:
                 self.logger.info(f"Collection {self.vector_config.collection_name} already exists")
  
-            self.vector_store = QdrantVectorStore(
+            self.vector_store: QdrantVectorStore = QdrantVectorStore(
                 client=self.qdrant,
                 collection_name=self.vector_config.collection_name,
                 vector_name=self.vector_config.vector_name,

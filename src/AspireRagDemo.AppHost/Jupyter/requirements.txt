@@ -20,3 +20,4 @@ langchain-community
 langchain-openai
 langchain_huggingface
 unstructured[md]
+opentelemetry-instrumentation-qdrant
