@@ -35,6 +35,7 @@ Using the UI to run queries with or without context:
     ![Access the UI](./images/accessing-the-ui.png)
 - Enter a .NET Aspire related question.
   - Example: What packages do I need to run Ollama as a host in .Net Aspire?
+  - ![UI](./images/ui.png)
 - Click on "Search with Context" or "Search without Context" buttons.
 - View the results.
 
