@@ -44,3 +44,49 @@ Using the UI to run queries with or without context:
 You can view the logs and traces from Python and .Net applications in the Aspire dashboard as usual.
 
 ![E2E Traces](./images/e2e-traces.png)
+
+
+# Supporting multiple models:
+
+The main driver for our solution is the [launchSettings.json](./src/AspireRagDemo.AppHost/Properties/launchSettings.json) file included with Aspire Apphost project. By modifying this, all our components will utilise the desired models or providers. 
+
+```json
+{
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "http": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "applicationUrl": "http://localhost:15062",
+      "environmentVariables": {
+        ....        
+        "EMBEDDING_MODEL": "nomic-embed-text",
+        "EMBEDDING_MODEL_PROVIDER": "Ollama",        
+        "CHAT_MODEL": "mistral",
+        "CHAT_MODEL_PROVIDER": "Ollama",        
+        "VECTOR_STORE_VECTOR_NAME": "page_content_vector",
+        ...
+      }
+    }
+  }
+}
+```
+
+List of models supported by Ollama: https://ollama.com/search
+
+In this project, we can use the following values for EMBEDDING_MODEL_PROVIDER:
+- Ollama : Spin up an Ollama Container using aspire and inject the connection string.
+- OllamaHost : Do not spin up Ollama container and inject host.docker.internal to containers or localhost to the application executables.
+- OpenAI: Inject the API key from secrets and use default OpenAI urls.
+- HuggingFace: Inject API key from developer secrets and use default HuggingFace inference urls.
+
+To use OpenAI or huggingFace, the following user secrets need to be set with valid keys:
+Please note, nothing Python and .Net components will use default endpoints for these services and therefore connection strings are not used.
+
+```json
+{
+  "Parameters:OpenAIKey": "",
+  "Parameters:HuggingFaceKey": ""
+}
+```

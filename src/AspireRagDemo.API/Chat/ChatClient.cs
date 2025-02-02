@@ -1,5 +1,6 @@
 using System.Text;
 using AspireRagDemo.API.Models;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.VectorData;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Embeddings;
@@ -9,8 +10,8 @@ namespace AspireRagDemo.API.Chat;
 
 public class ChatClient(
     Kernel kernel,
-    IVectorStore vectorStore,
-    IConfiguration configuration,
+    IVectorStore vectorStore, 
+    IOptions<ModelConfiguration> configuration,
     ILogger<ChatClient> logger) : IChatClient
 {
     private const short TopSearchResults = 20;
@@ -18,10 +19,9 @@ public class ChatClient(
     private readonly ITextEmbeddingGenerationService _embeddingGenerator =
         kernel.GetRequiredService<ITextEmbeddingGenerationService>();
 
-    private readonly IVectorStoreRecordCollection<ulong, FaqRecord> _faqCollection =
-        vectorStore.GetCollection<ulong, FaqRecord>(configuration["VectorStoreCollectionName"]
-                                                    ?? throw new InvalidOperationException(
-                                                        $"Configuration variable VectorStoreCollectionName can't be empty."));
+    private readonly IVectorStoreRecordCollection<Guid, FaqRecord> _faqCollection =
+        vectorStore.GetCollection<Guid, FaqRecord>(configuration.Value.VectorStoreCollectionName ??
+        throw new InvalidOperationException($"Vector store collection name is not set in the configuration. {configuration.Value.VectorStoreCollectionName }"));
 
     public async Task<string> AnswerQuestion(string question, bool useAdditionalContext)
     {
