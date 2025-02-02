@@ -1,6 +1,6 @@
 ﻿namespace AspireRagDemo.API.Chat;
 
-public interface ITechnicalAssistantChat
+public interface IChatClient
 {
     Task<string> AnswerQuestion(string question, bool useAdditionalContext);
 }

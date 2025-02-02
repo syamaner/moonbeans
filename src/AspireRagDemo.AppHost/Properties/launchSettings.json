@@ -19,10 +19,10 @@
         "DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS": "true",
         
         "EMBEDDING_MODEL": "nomic-embed-text",
-        "EMBEDDING_MODEL_PROVIDER": "OllamaHost",
+        "EMBEDDING_MODEL_PROVIDER": "Ollama",
         
         "CHAT_MODEL": "mistral",
-        "CHAT_MODEL_PROVIDER": "OllamaHost",
+        "CHAT_MODEL_PROVIDER": "Ollama",
         
         "VECTOR_STORE_VECTOR_NAME": "page_content_vector",
         "---ONLY-IF-USING_PODMAN---DOTNET_ASPIRE_CONTAINER_RUNTIME": "podman"

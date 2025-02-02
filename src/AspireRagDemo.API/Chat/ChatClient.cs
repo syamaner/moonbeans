@@ -7,11 +7,11 @@ using Microsoft.SemanticKernel.Embeddings;
 
 namespace AspireRagDemo.API.Chat;
 
-public class TechnicalAssistantChat(
+public class ChatClient(
     Kernel kernel,
     IVectorStore vectorStore,
     IConfiguration configuration,
-    ILogger<TechnicalAssistantChat> logger) : ITechnicalAssistantChat
+    ILogger<ChatClient> logger) : IChatClient
 {
     private const short TopSearchResults = 20;
 
@@ -23,14 +23,6 @@ public class TechnicalAssistantChat(
                                                     ?? throw new InvalidOperationException(
                                                         $"Configuration variable VectorStoreCollectionName can't be empty."));
 
-    /// <summary>
-    /// Answer the question based on the provided question and optionally using additional context.
-    /// </summary>
-    /// <param name="question"></param>
-    /// <param name="useAdditionalContext">If true, this method will act as a basic RAG query.
-    ///  Otherwise, the method will rely on the model without and extra information.
-    /// </param>
-    /// <returns></returns>
     public async Task<string> AnswerQuestion(string question, bool useAdditionalContext)
     {
         try
@@ -45,7 +37,7 @@ public class TechnicalAssistantChat(
             logger.LogError(e,
                 "Error while answering the question. Additional context required? : {useAdditionalContext}",
                 useAdditionalContext);
-            return "I am sorry, I am unable to answer the question at the moment.";
+            return "An error occured while answering the question.";
         }
     }
 
@@ -65,7 +57,7 @@ public class TechnicalAssistantChat(
         catch (Exception e)
         {
             logger.LogError(e, "Error while answering the question without additional context.");
-            return "I am sorry, I am unable to answer the question at the moment.";
+            return "An error occured while answering the question.";
         }
     }
 

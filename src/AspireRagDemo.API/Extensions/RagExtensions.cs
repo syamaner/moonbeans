@@ -16,7 +16,7 @@ public static class RagExtensions
     {
         var modelConfiguration = new ModelConfiguration();
         builder.Configuration.GetSection("ModelConfiguration").Bind(modelConfiguration);
-        builder.Services.AddSingleton<ITechnicalAssistantChat, TechnicalAssistantChat>();
+        builder.Services.AddSingleton<IChatClient, ChatClient>();
 
         var kernelBuilder = Kernel.CreateBuilder();
 

@@ -4,6 +4,7 @@ using AspireRagDemo.API.Extensions;
 using AspireRagDemo.API.Models;
 using AspireRagDemo.ServiceDefaults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Embeddings;
 using Qdrant.Client;
@@ -29,9 +30,9 @@ if (app.Environment.IsDevelopment())
 app.MapGet("/vector-search", async ([FromQuery] string query,
         [FromServices] Kernel kernel,
         [FromServices] QdrantClient qdrantClient,
-        [FromServices] ModelConfiguration configuration) =>
+        [FromServices] IOptions<ModelConfiguration> configuration) =>
     {
-        var collectionName = configuration.VectorStoreCollectionName;
+        var collectionName = configuration.Value.VectorStoreCollectionName;
         var embeddingGenerator = kernel.GetRequiredService<ITextEmbeddingGenerationService>();
         var vectors = await embeddingGenerator.GenerateEmbeddingsAsync([query]);
         var result = await qdrantClient.SearchAsync(collectionName, vectors[0], limit: 5);
@@ -40,18 +41,20 @@ app.MapGet("/vector-search", async ([FromQuery] string query,
     .WithName("VectorSearch");
 
 app.MapGet("/chat-with-context", async ([FromQuery] string query,
-        [FromServices] ITechnicalAssistantChat technicalAssistantChat) =>
+        [FromServices] IChatClient technicalAssistantChat,
+        [FromServices] IOptions<ModelConfiguration> configuration) =>
     {
         //Can you please explain why Should I learn .Net Aspire if I already know Docker Compose?
         var answer = await technicalAssistantChat.AnswerQuestion(query, true);
-        return new ChatResponse(answer, query);
+        return new ChatResponse(answer, query, configuration.Value.EmbeddingModel, configuration.Value.ChatModel);
     })
     .WithName("RagChat");
 
-app.MapGet("/chat", async ([FromQuery] string query, [FromServices] ITechnicalAssistantChat technicalAssistantChat) =>
+app.MapGet("/chat", async ([FromQuery] string query, [FromServices] IChatClient technicalAssistantChat,
+        [FromServices] IOptions<ModelConfiguration> configuration) =>
     {
         var answer = await technicalAssistantChat.AnswerQuestion(query, false);
-        return new ChatResponse(answer, query);
+        return new ChatResponse(answer, query, configuration.Value.EmbeddingModel, configuration.Value.ChatModel);
     })
     .WithName("BasicChat");
 

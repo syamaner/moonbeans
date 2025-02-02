@@ -71,20 +71,4 @@ class VectorVisualizer:
         
         # # Example 1: Basic vectors
         self.plot_vectors(words, vectors_2d)
-        
-        # # Example 2: Vector addition (cat + house - hotel ≈ dog house)
-        # result_vector = vectors[0] + vectors[3] - vectors[2]  # cat + house - hotel
-        # self.plot_vectors(
-        #     words, vectors_2d,
-        #     operations=[(0, 3, '+'), (3, 2, '-')],
-        #     result_vectors=[(result_vector, 'cat_house')]
-        # )
-        
-        # # Example 3: Analogy (dog is to house as cat is to ?)
-        # analogy_vector = vectors[1] + vectors[3] - vectors[0]  # dog + house - cat
-        # self.plot_vectors(
-        #     words, vectors_2d,
-        #     operations=[(1, 3, '+'), (3, 0, '-')],
-        #     result_vectors=[(analogy_vector, 'dog_house')]
-        # )
 
