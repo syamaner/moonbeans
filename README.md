@@ -2,7 +2,7 @@
 
 The code in this repository demonstrates building a minimal RAG system using a combination of .NET Aspire, Python and .NET.
 
-Original Article link:
+Original Article link: https://dev.to/syamaner/building-a-simple-retrieval-augmented-generation-system-using-net-aspire-4pdp
 
 # Running the code samples
 
