@@ -1,16 +1,14 @@
-# add chromadb packages
-chromadb==0.6.3
-pandas==2.2.3
-arize-phoenix==7.8.1
+pandas
+arize-phoenix
 ragas
-umap-learn==0.5.7
-plotly==5.24.1
-unstructured==0.16.13
+umap-learn
+plotly
+unstructured
 langchain
-gitingest==0.1.2
-qdrant-client==1.13.0
-langchain-ollama==0.2.2
-langchain-qdrant==0.2.0
+gitingest
+qdrant-client
+langchain-ollama
+langchain-qdrant
 opentelemetry-exporter-otlp-proto-grpc
 opentelemetry-instrumentation-langchain
 opentelemetry-distro
@@ -21,3 +19,6 @@ langchain-openai
 langchain_huggingface
 unstructured[md]
 opentelemetry-instrumentation-qdrant
+ipywidgets
+jupyter_contrib_nbextensions
+jupyter-ai[all]

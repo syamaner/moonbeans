@@ -10,8 +10,7 @@ ChatConfiguration chatConfiguration = new();
 // Ingestion and Query will use Ollama for both embeddings and generation.
 var openAiKey = builder.AddParameter("OpenAIKey", secret: true);
 var hfApiKey = builder.AddParameter("HuggingFaceKey", secret: true);
-// When Jupyter server is launched, this is the secret to use when logging in to manage notebooks.
-var jupyterLocalSecret = builder.AddParameter("JupyterSecret", secret: false);
+
 // container ports we will be using
 Dictionary<string, int> applicationPorts = new()
 {
@@ -65,7 +64,7 @@ _ = builder
 var jupyter = builder
     .AddDockerfile(Constants.ConnectionStringNames.JupyterService, "./Jupyter")
     .WithBuildArg("PORT", applicationPorts[Constants.ConnectionStringNames.JupyterService])    
-    .WithArgs($"--NotebookApp.token={jupyterLocalSecret.Resource.Value}")
+    .WithArgs($"--NotebookApp.token=''")
     .WithBindMount("./Jupyter/Notebooks/","/home/jovyan/work")
     .WithHttpEndpoint(targetPort: applicationPorts[Constants.ConnectionStringNames.JupyterService], env: "PORT")
     .WithLifetime(ContainerLifetime.Session)
