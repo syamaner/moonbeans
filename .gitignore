@@ -91,10 +91,11 @@ node_repl_history
 *.pidb
 *.svclog
 *.scc
-doc/**/*
-data/**/*
-**/data/**/*
 **/.DS_Store
 src/AspireRagDemo.AppHost/Ollama/ZscalerRootCertificate-2048-SHA256.crt
 /docs/chroma
 /docs/docs-aspire
+src/AspireRagDemo.AppHost/data/qdrant/**/*
+src/AspireRagDemo.AppHost/Ollama/data/models/**/*
+src/AspireRagDemo.AppHost/Ollama/data/id_*
+
