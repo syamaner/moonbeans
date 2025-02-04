@@ -18,10 +18,10 @@
         "DOTNET_ENVIRONMENT": "Development",
         "DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS": "true",
         
-        "EMBEDDING_MODEL": "nomic-embed-text",
+        "EMBEDDING_MODEL": "granite-embedding",
         "EMBEDDING_MODEL_PROVIDER": "Ollama",
         
-        "CHAT_MODEL": "mistral",
+        "CHAT_MODEL": "qwen2.5:1.5b",
         "CHAT_MODEL_PROVIDER": "Ollama",
         
         "VECTOR_STORE_VECTOR_NAME": "page_content_vector",

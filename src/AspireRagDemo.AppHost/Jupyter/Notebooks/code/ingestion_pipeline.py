@@ -213,21 +213,19 @@ class IngestionPipeline:
             
     def __extract_file_metadata(self, file_path: str, content: str) -> Dict:
         """Extract comprehensive metadata for a file."""
-        
-        with self.tracer.start_as_current_span("extract metadata"):
-            file_ext = os.path.splitext(file_path)[1].lower()
-            metadata = {
-                "file_path": file_path,
-                "file_type": file_ext,
-                "file_name": os.path.basename(file_path),
-                "directory": os.path.dirname(file_path),
-                "size_bytes": len(content.encode('utf-8')),
-                "num_lines": len(content.splitlines()),
-                "is_empty": len(content.strip()) == 0,
-                "has_shebang": content.startswith('#!') if content else False,
-            }
+        file_ext = os.path.splitext(file_path)[1].lower()
+        metadata = {
+            "file_path": file_path,
+            "file_type": file_ext,
+            "file_name": os.path.basename(file_path),
+            "directory": os.path.dirname(file_path),
+            "size_bytes": len(content.encode('utf-8')),
+            "num_lines": len(content.splitlines()),
+            "is_empty": len(content.strip()) == 0,
+            "has_shebang": content.startswith('#!') if content else False,
+        }
             
-            return metadata
+        return metadata
             
     def __setup_vector_store(self):
         """Setup vector store collection."""

@@ -96,3 +96,5 @@ data/**/*
 **/data/**/*
 **/.DS_Store
 src/AspireRagDemo.AppHost/Ollama/ZscalerRootCertificate-2048-SHA256.crt
+/docs/chroma
+/docs/docs-aspire

@@ -4,19 +4,6 @@ namespace AspireRagDemo.API.Chat;
 
 public static class PromptConstants
 {
-    private const string RagPromptTemplate = """
-                                             You are a helpful AI assistant specialised in technical questions and good at utilising additional technical resources provided to you as additional context.
-                                             Use the following context to answer the question. You always bringing necessary references.
-                                             You prefer a good summary over a long explanation but also provide clear justification for the answer.
-                                             If the question has absolutely no relevance to the context, please answer "I don't know the answer."
-                                             Please do not include the question in the answer. You can sometimes make educated guesses if the context can imply the answer.
-                                             
-                                             Context:
-                                             {{$context}}
-                                             
-                                             Question:
-                                             {{$question}}                                             
-                                             """;
 
     private const string BasicChatPromptTemplate = """
                                                    You are a helpful AI assistant specialised in technical question.
@@ -28,7 +15,20 @@ public static class PromptConstants
                                                    Question:
                                                    {{$question}}                                                   
                                                    """;
-    
+    private const string RagPromptTemplate = """
+                                             You are a helpful AI assistant specialised in technical questions and good at utilising additional technical resources provided to you as additional context.
+                                             Use the following context to answer the question. You always bringing necessary references.
+                                             You prefer a good summary over a long explanation but also provide clear justification for the answer.
+                                             If the question has absolutely no relevance to the context, please answer "I don't know the answer."
+                                             Please do not include the question in the answer. You can sometimes make educated guesses if the context can imply the answer.
+
+                                             Context:
+                                             {{$context}}
+
+                                             Question:
+                                             {{$question}}                                             
+                                             """;
+  
     /// <summary>
     /// To answer the question, the AI assistant will use the provided context.
     /// </summary>
