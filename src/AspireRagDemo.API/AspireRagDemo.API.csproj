@@ -10,9 +10,9 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.1" />
         <PackageReference Include="Microsoft.SemanticKernel" Version="1.34.0" />
-        <PackageReference Include="Microsoft.SemanticKernel.Connectors.HuggingFace" Version="1.34.0-preview" />
-        <PackageReference Include="Microsoft.SemanticKernel.Connectors.Ollama" Version="1.34.0-alpha" />
-        <PackageReference Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="1.34.0-preview" />
+        <PackageReference Include="Microsoft.SemanticKernel.Connectors.HuggingFace" Version="1.36.1-preview" />
+        <PackageReference Include="Microsoft.SemanticKernel.Connectors.Ollama" Version="1.36.1-alpha" />
+        <PackageReference Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="1.36.1-preview" />
     </ItemGroup>
 
     <ItemGroup>

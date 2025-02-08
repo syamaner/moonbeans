@@ -32,8 +32,11 @@ public static class RagExtensions
         IKernelBuilder kernelBuilder)
     {
         
-        var apiKey = modelConfiguration.EmbeddingModelProviderApiKey;
-        var embeddingModel = modelConfiguration.EmbeddingModel;
+        var apiKey = modelConfiguration.EmbeddingModelProviderApiKey ?? throw new InvalidOperationException(
+            $"Model Configuration {nameof(modelConfiguration.EmbeddingModelProviderApiKey)} cannot be null.");
+        
+        var embeddingModel = modelConfiguration.EmbeddingModel 
+            ?? throw new InvalidOperationException($"Model Configuration {nameof(modelConfiguration.EmbeddingModel)} cannot be null.");
         
         switch (modelConfiguration.EmbeddingModelProvider)
         {
@@ -61,6 +64,7 @@ public static class RagExtensions
     private static void AddChatModel(IConfiguration configuration, ModelConfiguration modelConfiguration,
         IKernelBuilder kernelBuilder)
     { 
+        
         var apiKey = modelConfiguration.ChatModelProviderApiKey;
         switch (modelConfiguration.ChatModelProvider)
         {

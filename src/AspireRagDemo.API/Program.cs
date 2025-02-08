@@ -32,7 +32,9 @@ app.MapGet("/vector-search", async ([FromQuery] string query,
         [FromServices] QdrantClient qdrantClient,
         [FromServices] IOptions<ModelConfiguration> configuration) =>
     {
-        var collectionName = configuration.Value.VectorStoreCollectionName;
+        var collectionName = configuration.Value.VectorStoreCollectionName ?? throw new InvalidOperationException(
+            $"Model Configuration {nameof(configuration.Value.VectorStoreCollectionName)} cannot be null.");
+        
         var embeddingGenerator = kernel.GetRequiredService<ITextEmbeddingGenerationService>();
         var vectors = await embeddingGenerator.GenerateEmbeddingsAsync([query]);
         var result = await qdrantClient.SearchAsync(collectionName, vectors[0], limit: 5);
