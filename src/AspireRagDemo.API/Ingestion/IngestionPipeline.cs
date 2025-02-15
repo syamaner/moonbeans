@@ -18,6 +18,7 @@ public class IngestionPipeline(
     ILogger<IngestionPipeline> logger,
     IEnumerable<IChunker> documentChunkers)
 {
+
     private readonly IVectorStoreRecordCollection<Guid, FaqRecord> _faqCollection =
         vectorStore.GetCollection<Guid, FaqRecord>(configuration.Value.VectorStoreCollectionName ??
                                                    throw new InvalidOperationException(
@@ -38,21 +39,23 @@ public class IngestionPipeline(
             throw new ArgumentException($"Document type {documentType} is not supported.");
         }
 
-        var ingestionTimer = new Stopwatch();
-        var chunkingTimer = new Stopwatch();
-        var embeddingTimer = new Stopwatch();
-        ingestionTimer.Start();
-        chunkingTimer.Start();
+        using var ingestionMeterHelper = new MetricHelper(metrics,
+            MetricNames.DocumentIngestion, new KeyValuePair<string, object?>("File", filePath),
+            new KeyValuePair<string, object?>("EmbeddingModel", configuration.Value.EmbeddingModel));
+
         await foreach (var fileChunk in documentChunker.GetChunks(filePath))
         {
-            chunkingTimer.Stop();
-            metrics.RecordChunkingTime(chunkingTimer.Elapsed.TotalMilliseconds);
             try
             {
-                embeddingTimer.Restart();
-                var embeddings = await _embeddingGenerator.GenerateEmbeddingsAsync(fileChunk.Chunks);
-                embeddingTimer.Stop();
-                metrics.RecordEmbeddingTime(embeddingTimer.Elapsed.TotalMilliseconds);
+                IList<ReadOnlyMemory<float>>? embeddings = null;
+
+                using (new MetricHelper(metrics,
+                           MetricNames.Embedding, new KeyValuePair<string, object?>("File", filePath),
+                           new KeyValuePair<string, object?>("EmbeddingModel", configuration.Value.EmbeddingModel)))
+                {
+                    embeddings = await _embeddingGenerator.GenerateEmbeddingsAsync(fileChunk.Chunks);
+                }
+
                 metrics.RecordProcessedChunkCount(fileChunk.Chunks.Count);
                 for (var i = 0; i < fileChunk.Chunks.Count; i++)
                 {
@@ -82,13 +85,9 @@ public class IngestionPipeline(
             }
 
             documentsProcessed++;
-            chunkingTimer.Restart();
         }
 
-        ingestionTimer.Stop();
         metrics.RecordProcessedDocumentCount(documentsProcessed);
-        metrics.RecordIngestionTime(documentIngestionTime: ingestionTimer.Elapsed.TotalMilliseconds,
-            new KeyValuePair<string, object?>("File", filePath));
     }
 
     private async Task EnsureCollectionExists(bool forceRecreate = false)

@@ -1,16 +1,18 @@
+using AspireRagDemo.ServiceDefaults.Metrics;
 using LangChain.Splitters.Text;
 
 namespace AspireRagDemo.API.Ingestion;
 
 public class GitIngestChunker : IChunker
 {
+    private readonly AspireRagDemoIngestionMetrics _metrics;
     private readonly Dictionary<string, TextSplitter> _splitters;
 
-    private readonly CharacterTextSplitter _characterSplitter = 
-        new CharacterTextSplitter("\n", 600, 50);
+    private readonly CharacterTextSplitter _characterSplitter = new("\n", 600, 50);
 
-    public GitIngestChunker()
+    public GitIngestChunker(AspireRagDemoIngestionMetrics metrics)
     {
+        _metrics = metrics;
         var headersToSplitOn = new[] { "#", "##", "###", "####", "#####", "######" };
         _splitters = new Dictionary<string, TextSplitter>
         {
@@ -28,6 +30,8 @@ public class GitIngestChunker : IChunker
         
         foreach (var file in files)
         {
+            using var chunkingMeterHelper=new MetricHelper(_metrics, MetricNames.Chunking);
+            
             var extension = Path.GetExtension(file.Key);
             if (!_splitters.TryGetValue(extension, value: out var splitter)) continue;
             
