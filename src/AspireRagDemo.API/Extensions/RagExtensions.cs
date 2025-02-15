@@ -1,6 +1,7 @@
 #pragma warning disable SKEXP0070
 #pragma warning disable SKEXP0010
 using AspireRagDemo.API.Chat;
+using AspireRagDemo.API.Infrastructure;
 using AspireRagDemo.ServiceDefaults;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.Qdrant;
@@ -11,7 +12,6 @@ namespace AspireRagDemo.API.Extensions;
 public static class RagExtensions
 {
     private const long HttpTimeoutMinutes = 10;
-
     public static void AddSemanticKernelModels(this WebApplicationBuilder builder)
     {
         var modelConfiguration = new ModelConfiguration();
@@ -20,7 +20,7 @@ public static class RagExtensions
 
         var kernelBuilder = Kernel.CreateBuilder();
 
-        AddVectorStore(builder, kernelBuilder);
+        AddVectorStore(builder, modelConfiguration.EmbeddingVectorSize, kernelBuilder);
         AddEmbeddingModel(builder.Configuration, modelConfiguration, kernelBuilder);
         AddChatModel(builder.Configuration, modelConfiguration, kernelBuilder);
 
@@ -63,8 +63,7 @@ public static class RagExtensions
 
     private static void AddChatModel(IConfiguration configuration, ModelConfiguration modelConfiguration,
         IKernelBuilder kernelBuilder)
-    { 
-        
+    {        
         var apiKey = modelConfiguration.ChatModelProviderApiKey;
         switch (modelConfiguration.ChatModelProvider)
         {
@@ -89,7 +88,7 @@ public static class RagExtensions
         }
     }
 
-    private static void AddVectorStore(WebApplicationBuilder builder, IKernelBuilder kernelBuilder)
+    private static void AddVectorStore(WebApplicationBuilder builder,  int embeddingModelSize, IKernelBuilder kernelBuilder)
     {
         var configuration = builder.Configuration;
         var connectionString = configuration.GetConnectionString(Constants.ConnectionStringNames.Qdrant);
@@ -102,7 +101,7 @@ public static class RagExtensions
         var options = new QdrantVectorStoreOptions
         {
             HasNamedVectors = true,
-            VectorStoreCollectionFactory = new QdrantCollectionFactory()
+            VectorStoreCollectionFactory = new QdrantCollectionFactory(embeddingModelSize)
         };
         builder.Services.AddSingleton(options);
 

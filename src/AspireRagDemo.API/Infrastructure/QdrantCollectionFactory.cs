@@ -5,10 +5,29 @@ using Qdrant.Client;
 
 #pragma warning disable CS8603 // Possible null reference return.
 
-namespace AspireRagDemo.API.Extensions;
+namespace AspireRagDemo.API.Infrastructure;
 
-public class QdrantCollectionFactory() : IQdrantVectorStoreRecordCollectionFactory
+public class QdrantCollectionFactory(int embeddingVectorSize=768) : IQdrantVectorStoreRecordCollectionFactory
 {
+    private readonly VectorStoreRecordDefinition _faqRecordDefinition = new VectorStoreRecordDefinition
+    {
+        Properties = new List<VectorStoreRecordProperty>
+        {
+            new VectorStoreRecordKeyProperty("Id", typeof(Guid)),
+            new VectorStoreRecordDataProperty("Content",
+                typeof(string)) { IsFilterable = true, StoragePropertyName = "page_content" },
+            new VectorStoreRecordDataProperty("Metadata", typeof(FileMetadata))
+            {
+                IsFullTextSearchable = true, StoragePropertyName = "metadata"
+            },
+            new VectorStoreRecordVectorProperty("Vector", typeof(float))
+            {
+                Dimensions = embeddingVectorSize, DistanceFunction = DistanceFunction.CosineDistance, IndexKind = IndexKind.Hnsw,
+                StoragePropertyName = "page_content_vector"
+            },
+        }
+    };
+    
     public IVectorStoreRecordCollection<TKey, TRecord> CreateVectorStoreRecordCollection<TKey, TRecord>(
         QdrantClient qdrantClient, string name, VectorStoreRecordDefinition? vectorStoreRecordDefinition)
         where TKey : notnull
@@ -23,7 +42,7 @@ public class QdrantCollectionFactory() : IQdrantVectorStoreRecordCollectionFacto
                 {
                     HasNamedVectors = true,
                     PointStructCustomMapper = new FaqRecordMapper(),
-                    VectorStoreRecordDefinition = vectorStoreRecordDefinition
+                    VectorStoreRecordDefinition = _faqRecordDefinition //vectorStoreRecordDefinition
                 }) as IVectorStoreRecordCollection<TKey, TRecord>;
             return customCollection;
         }

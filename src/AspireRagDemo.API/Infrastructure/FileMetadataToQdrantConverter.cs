@@ -5,7 +5,7 @@ using Qdrant.Client.Grpc;
 #pragma warning disable CS8603 // Possible null reference return.
 #pragma warning disable CS8604 // Possible null reference argument.
 
-namespace AspireRagDemo.API.Extensions;
+namespace AspireRagDemo.API.Infrastructure;
 
 public static class FileMetadataToQdrantConverter
 {

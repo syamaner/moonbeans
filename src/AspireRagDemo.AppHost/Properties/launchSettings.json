@@ -20,6 +20,7 @@
         
         "EMBEDDING_MODEL": "granite-embedding",
         "EMBEDDING_MODEL_PROVIDER": "Ollama",
+        "EMBEDDING_VECTOR_SIZE": "768",
         
         "CHAT_MODEL": "qwen2.5:1.5b",
         "CHAT_MODEL_PROVIDER": "Ollama",

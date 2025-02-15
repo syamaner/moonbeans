@@ -14,6 +14,11 @@ public record ChatConfiguration
             EmbeddingModelProvider = embeddingModelProvider;
         }
  
+        if(int.TryParse(Environment.GetEnvironmentVariable("EMBEDDING_VECTOR_SIZE"), out var embeddingVectorSize))
+        {
+            EmbeddingVectorSize = embeddingVectorSize;
+        }
+        
         ChatModel = Environment.GetEnvironmentVariable("CHAT_MODEL") ?? "phi3.5";
         if(Enum.TryParse<ModelProvider>(Environment.GetEnvironmentVariable("CHAT_MODEL_PROVIDER"), 
                out var chatModelProvider))
@@ -53,7 +58,8 @@ public record ChatConfiguration
     public string VectorStoreCollectionName { get; init; }
     
     public string VectorStoreVectorName { get; init; }
-         
+    public  int EmbeddingVectorSize { get; init; } = 768;
+    
     /// <summary>
     /// We are generating Vector Store Collection name depenmding on chat and embedding model in use.
     /// For Qdrant, there are certain naming conventions that need to be followed. So we strip out all excect letters (upper / lower) and hyphens.

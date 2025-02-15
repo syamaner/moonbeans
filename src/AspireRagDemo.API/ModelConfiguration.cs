@@ -15,4 +15,5 @@ public class ModelConfiguration
 
     public string VectorStoreCollectionName { get; set; } = null!;
     public string VectorStoreVectorName { get; set; } = null!;
+    public int EmbeddingVectorSize { get; set; } = 768;
 }

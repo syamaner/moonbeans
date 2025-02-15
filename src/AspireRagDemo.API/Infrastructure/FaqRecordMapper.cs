@@ -3,10 +3,11 @@ using AspireRagDemo.ServiceDefaults;
 using Microsoft.Extensions.VectorData;
 using Qdrant.Client.Grpc;
 
-namespace AspireRagDemo.API.Extensions;
+namespace AspireRagDemo.API.Infrastructure;
 
 public class FaqRecordMapper : IVectorStoreRecordMapper<FaqRecord, PointStruct>
 {
+    
     public PointStruct MapFromDataToStorageModel(FaqRecord dataModel)
     {
         var pointStruct = new PointStruct

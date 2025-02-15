@@ -46,6 +46,7 @@ var apiService = builder.AddProject<Projects.AspireRagDemo_API>(Constants.Connec
     .WithEnvironment("ModelConfiguration__ChatModelProviderApiKey",GetApiProviderKey(chatConfiguration.ChatModelProvider))
     .WithEnvironment("ModelConfiguration__VectorStoreCollectionName",chatConfiguration.VectorStoreCollectionName)
     .WithEnvironment("ModelConfiguration__VectorStoreVectorName",chatConfiguration.VectorStoreVectorName)
+    .WithEnvironment("ModelConfiguration__EmbeddingVectorSize",chatConfiguration.EmbeddingVectorSize.ToString)
     .WithReference(vectorStore)
     .WaitFor(vectorStore) ;
     
