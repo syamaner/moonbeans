@@ -2,20 +2,22 @@ using LangChain.Splitters.Text;
 
 namespace AspireRagDemo.API.Ingestion;
 
-public class GitIngestDocumentChunker : IDocumentChunker
+public class GitIngestChunker : IChunker
 {
     private readonly Dictionary<string, TextSplitter> _splitters;
 
-    public GitIngestDocumentChunker()
+    private readonly CharacterTextSplitter _characterSplitter = 
+        new CharacterTextSplitter("\n", 600, 50);
+
+    public GitIngestChunker()
     {
         var headersToSplitOn = new[] { "#", "##", "###", "####", "#####", "######" };
         _splitters = new Dictionary<string, TextSplitter>
         {
-            { "md", new MarkdownHeaderTextSplitter(headersToSplitOn) },
-            { "txt", new RecursiveCharacterTextSplitter() },
+            { ".md", new MarkdownHeaderTextSplitter(headersToSplitOn) },
             //add for yml
-            { "yml", new RecursiveCharacterTextSplitter() },
-            { "yaml", new RecursiveCharacterTextSplitter() }
+            { ".yml", _characterSplitter },
+            { ".yaml", _characterSplitter }
         };
     }
 
@@ -28,12 +30,29 @@ public class GitIngestDocumentChunker : IDocumentChunker
         {
             var extension = Path.GetExtension(file.Key);
             if (!_splitters.TryGetValue(extension, value: out var splitter)) continue;
+            
             var fileChunks = new FileChunks(file.Key, []);
 
             var chunks = splitter.SplitText(file.Value);
-            foreach (var chunk in chunks)
+            if(chunks.Any(x=>x.Length>600))
             {
-                fileChunks.Chunks.Add(chunk);
+                foreach (var chunk in chunks)
+                {
+                    if(chunk.Length>600)
+                    {
+                        var subChunks = _characterSplitter.SplitText(chunk);
+                        fileChunks.Chunks.AddRange(subChunks);
+                    }else{
+                        fileChunks.Chunks.Add(chunk);
+                    }
+                }
+            }
+            else
+            {
+                foreach (var chunk in chunks)
+                {
+                    fileChunks.Chunks.Add(chunk);
+                }
             }
 
             yield return fileChunks;

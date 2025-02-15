@@ -16,7 +16,7 @@ public class FaqRecordMapper : IVectorStoreRecordMapper<FaqRecord, PointStruct>
             Vectors = new Vectors(),
             Payload =
             {
-                { Constants.ConnectionStringNames.FaqVectorName, dataModel.Content },
+                { Constants.ConnectionStringNames.FaqPayloadFieldName, dataModel.Content },
                 { Constants.ConnectionStringNames.MetadataPayloadFielname, new Value { StructValue = new Struct() } }
             },
         };
@@ -43,8 +43,9 @@ public class FaqRecordMapper : IVectorStoreRecordMapper<FaqRecord, PointStruct>
         {
             Id = Guid.Parse(storageModel.Id.Uuid),
             Content = storageModel.Payload[Constants.ConnectionStringNames.FaqPayloadFieldName].StringValue,
-            Metadata = FileMetadataToQdrantConverter.FromQdrantFields(storageModel.Payload[Constants.ConnectionStringNames.MetadataPayloadFielname].StructValue
-                .Fields),
+            //Metadata = null,
+            Metadata = FileMetadataToQdrantConverter.FromQdrantFields(
+            storageModel.Payload[Constants.ConnectionStringNames.MetadataPayloadFielname].StructValue.Fields),
             Vector = storageModel.Vectors != null
                 ? new ReadOnlyMemory<float>(storageModel.Vectors.Vectors_.Vectors[Constants.ConnectionStringNames.FaqVectorName].Data
                     .ToArray())

@@ -1,6 +1,7 @@
 using AspireRagDemo.API;
 using AspireRagDemo.API.Chat;
 using AspireRagDemo.API.Extensions;
+using AspireRagDemo.API.Ingestion;
 using AspireRagDemo.API.Models;
 using AspireRagDemo.ServiceDefaults;
 using Microsoft.AspNetCore.Mvc;
@@ -20,6 +21,9 @@ builder.AddServiceDefaults();
 builder.Services.AddOpenApi();
 builder.AddSemanticKernelModels();
 builder.Services.Configure<ModelConfiguration>(builder.Configuration.GetSection("ModelConfiguration"));
+
+builder.Services.AddSingleton<IngestionPipeline>();
+builder.Services.AddSingleton<IChunker,GitIngestChunker>();
 
 var app = builder.Build();
 if (app.Environment.IsDevelopment())
@@ -59,5 +63,14 @@ app.MapGet("/chat", async ([FromQuery] string query, [FromServices] IChatClient 
         return new ChatResponse(answer, query, configuration.Value.EmbeddingModel, configuration.Value.ChatModel);
     })
     .WithName("BasicChat");
+
+app.MapGet("/ingest", async ([FromQuery] string fileName, [FromServices] IngestionPipeline ingestionPipeline) =>
+    {
+        if (string.IsNullOrWhiteSpace(fileName))
+            fileName = "dotnet-docs-aspire.txt";
+        await ingestionPipeline.IngestDataAsync(fileName, DocumentType.GitIngest);
+        return true;
+    })
+    .WithName("Ingest");
 
 app.Run();

@@ -1,6 +1,6 @@
 namespace AspireRagDemo.API.Ingestion;
 
-public interface IDocumentChunker
+public interface IChunker
 {
     bool CanChunk(DocumentType documentType);
     IAsyncEnumerable<FileChunks> GetChunks(string gitIngestFilePath);

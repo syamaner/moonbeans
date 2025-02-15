@@ -9,7 +9,10 @@ namespace AspireRagDemo.API.Infrastructure;
 
 public class QdrantCollectionFactory(int embeddingVectorSize=768) : IQdrantVectorStoreRecordCollectionFactory
 {
-    private readonly VectorStoreRecordDefinition _faqRecordDefinition = new VectorStoreRecordDefinition
+    // mxbai-embed-large: 1024
+    // nomic-embed-text: 768
+    // granite-embedding:30m , 384
+    private readonly VectorStoreRecordDefinition _faqRecordDefinition = new()
     {
         Properties = new List<VectorStoreRecordProperty>
         {
@@ -18,11 +21,11 @@ public class QdrantCollectionFactory(int embeddingVectorSize=768) : IQdrantVecto
                 typeof(string)) { IsFilterable = true, StoragePropertyName = "page_content" },
             new VectorStoreRecordDataProperty("Metadata", typeof(FileMetadata))
             {
-                IsFullTextSearchable = true, StoragePropertyName = "metadata"
+                IsFullTextSearchable = false, StoragePropertyName = "metadata"
             },
             new VectorStoreRecordVectorProperty("Vector", typeof(float))
             {
-                Dimensions = embeddingVectorSize, DistanceFunction = DistanceFunction.CosineDistance, IndexKind = IndexKind.Hnsw,
+                Dimensions = embeddingVectorSize, DistanceFunction = DistanceFunction.CosineSimilarity, IndexKind = IndexKind.Hnsw,
                 StoragePropertyName = "page_content_vector"
             },
         }

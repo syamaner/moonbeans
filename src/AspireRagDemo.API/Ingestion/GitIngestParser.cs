@@ -4,7 +4,7 @@ namespace AspireRagDemo.API.Ingestion;
 
 public static class GitIngestParser
 {
-    private const string SeparatorLine = "================================================";
+    private const string SeparatorLine = "=====================";
     private const string FilePrefix = "File: ";
 
     public static Dictionary<string, string> ParseContent(string content)
@@ -16,32 +16,38 @@ public static class GitIngestParser
         var contentBuilder = new StringBuilder();
         var isCollectingContent = false;
 
+        var skipNextSeperatorLine = false;
         foreach (var line in lines)
         {
-            if (line.Trim() == SeparatorLine)
+            if (line.Trim().Contains(SeparatorLine))
             {
-                if (currentFileName != null && isCollectingContent)
+                if (currentFileName != null && isCollectingContent && !skipNextSeperatorLine)
                 {
-                    // Store the previous file's content
                     result[currentFileName] = contentBuilder.ToString().TrimEnd();
                     contentBuilder.Clear();
                     currentFileName = null;
+                    isCollectingContent = false;
+                    skipNextSeperatorLine = false;
+                    continue;
                 }
-                isCollectingContent = !isCollectingContent;
-                continue;
             }
 
-            if (!isCollectingContent && line.StartsWith(FilePrefix))
+            switch (isCollectingContent)
             {
-                currentFileName = line.Substring(FilePrefix.Length).Trim();
-                continue;
-            }
-
-            if (isCollectingContent && currentFileName != null)
-            {
-                if (line.Trim() != SeparatorLine && string.IsNullOrWhiteSpace(line))
+                case false when line.StartsWith("File:"):
+                    currentFileName = line.Replace("File:","").Trim();
+                    isCollectingContent = true;
+                    skipNextSeperatorLine = true;
+                    continue;
+                case true when currentFileName != null:
                 {
-                    contentBuilder.AppendLine(line);
+                    skipNextSeperatorLine = false;
+                    if (!line.Trim().Contains(SeparatorLine) && !string.IsNullOrWhiteSpace(line))
+                    {
+                        contentBuilder.AppendLine(line);
+                    }
+
+                    break;
                 }
             }
         }

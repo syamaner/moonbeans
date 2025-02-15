@@ -14,7 +14,7 @@ public class ChatClient(
     IOptions<ModelConfiguration> configuration,
     ILogger<ChatClient> logger) : IChatClient
 {
-    private const short TopSearchResults = 20;
+    private const short TopSearchResults = 10;
 
     private readonly ITextEmbeddingGenerationService _embeddingGenerator =
         kernel.GetRequiredService<ITextEmbeddingGenerationService>();

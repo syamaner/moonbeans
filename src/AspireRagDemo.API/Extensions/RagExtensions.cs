@@ -23,7 +23,7 @@ public static class RagExtensions
         AddVectorStore(builder, modelConfiguration.EmbeddingVectorSize, kernelBuilder);
         AddEmbeddingModel(builder.Configuration, modelConfiguration, kernelBuilder);
         AddChatModel(builder.Configuration, modelConfiguration, kernelBuilder);
-
+        
         var kernel = kernelBuilder.Build();
         builder.Services.AddSingleton(kernel);
     }
