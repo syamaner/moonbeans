@@ -1,3 +1,4 @@
+using AspireRagDemo.ServiceDefaults.Metrics;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.DependencyInjection;
@@ -6,6 +7,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Http.Resilience;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry;
+using OpenTelemetry.Instrumentation.Runtime;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
 
@@ -23,7 +25,6 @@ public static class Extensions
         builder.AddDefaultHealthChecks();
 
         builder.Services.AddServiceDiscovery();
-
         /*builder.Services.ConfigureHttpClientDefaults(http =>
         {
             // Turn on resilience by default
@@ -64,6 +65,9 @@ public static class Extensions
     public static TBuilder ConfigureOpenTelemetry<TBuilder>(this TBuilder builder)
         where TBuilder : IHostApplicationBuilder
     {
+        
+        builder.Services.AddSingleton<AspireRagDemoIngestionMetrics>();
+        
         builder.Logging.AddOpenTelemetry(logging =>
         {
             logging.IncludeFormattedMessage = true;
@@ -74,6 +78,7 @@ public static class Extensions
             .WithMetrics(metrics =>
             {
                 metrics.AddAspNetCoreInstrumentation()
+                    .AddMeter(AspireRagDemoIngestionMetrics.MeterName)
                     .AddHttpClientInstrumentation()
                     .AddRuntimeInstrumentation();
             })
