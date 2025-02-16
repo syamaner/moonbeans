@@ -25,7 +25,7 @@ public class GitIngestChunker : IChunker
     public async IAsyncEnumerable<FileChunks> GetChunks(string gitIngestFilePath)
     {
         var gitIngestFileContent = await File.ReadAllTextAsync(gitIngestFilePath);
-        var files = GitIngestParser.ParseContent(gitIngestFileContent);
+        var files = GitIngestFileSplitter.ParseContent(gitIngestFileContent);
         
         foreach (var file in files)
         {

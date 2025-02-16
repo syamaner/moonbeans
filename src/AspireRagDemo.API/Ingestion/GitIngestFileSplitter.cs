@@ -2,10 +2,10 @@ using System.Text;
 
 namespace AspireRagDemo.API.Ingestion;
 
-public static class GitIngestParser
+public static class GitIngestFileSplitter
 {
     private const string SeparatorLine = "=====================";
-    private const string FilePrefix = "File: ";
+    private const string FilePrefix = "File:";
 
     public static Dictionary<string, string> ParseContent(string content)
     {
@@ -34,8 +34,8 @@ public static class GitIngestParser
 
             switch (isCollectingContent)
             {
-                case false when line.StartsWith("File:"):
-                    currentFileName = line.Replace("File:","").Trim();
+                case false when line.StartsWith(FilePrefix):
+                    currentFileName = line.Replace(FilePrefix,"").Trim();
                     isCollectingContent = true;
                     skipNextSeperatorLine = true;
                     continue;
