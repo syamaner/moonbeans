@@ -20,7 +20,7 @@ public static class RagExtensions
 
         var kernelBuilder = Kernel.CreateBuilder();
 
-        AddVectorStore(builder, modelConfiguration.EmbeddingVectorSize, kernelBuilder);
+        AddVectorStore(builder, modelConfiguration.EmbeddingModel, kernelBuilder);
         AddEmbeddingModel(builder.Configuration, modelConfiguration, kernelBuilder);
         AddChatModel(builder.Configuration, modelConfiguration, kernelBuilder);
         
@@ -88,7 +88,7 @@ public static class RagExtensions
         }
     }
 
-    private static void AddVectorStore(WebApplicationBuilder builder,  int embeddingModelSize, IKernelBuilder kernelBuilder)
+    private static void AddVectorStore(WebApplicationBuilder builder,  string embeddingModelName, IKernelBuilder kernelBuilder)
     {
         var configuration = builder.Configuration;
         var connectionString = configuration.GetConnectionString(Constants.ConnectionStringNames.Qdrant);
@@ -101,7 +101,7 @@ public static class RagExtensions
         var options = new QdrantVectorStoreOptions
         {
             HasNamedVectors = true,
-            VectorStoreCollectionFactory = new QdrantCollectionFactory(embeddingModelSize)
+            VectorStoreCollectionFactory = new QdrantCollectionFactory(embeddingModelName)
         };
         builder.Services.AddSingleton(options);
 

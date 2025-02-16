@@ -7,11 +7,16 @@ using Qdrant.Client;
 
 namespace AspireRagDemo.API.Infrastructure;
 
-public class QdrantCollectionFactory(int embeddingVectorSize=768) : IQdrantVectorStoreRecordCollectionFactory
+public class QdrantCollectionFactory(string embeddingModel="nomic-embed-text") : IQdrantVectorStoreRecordCollectionFactory
 {
-    // mxbai-embed-large: 1024
-    // nomic-embed-text: 768
-    // granite-embedding:30m , 384
+    private static readonly Dictionary<string, int> EmbeddingModels = new()
+    {
+        { "mxbai-embed-large", 1024 },
+        { "nomic-embed-text", 768 },
+        { "granite-embedding:30m", 384 }
+    };
+
+
     private readonly VectorStoreRecordDefinition _faqRecordDefinition = new()
     {
         Properties = new List<VectorStoreRecordProperty>
@@ -25,7 +30,8 @@ public class QdrantCollectionFactory(int embeddingVectorSize=768) : IQdrantVecto
             },
             new VectorStoreRecordVectorProperty("Vector", typeof(float))
             {
-                Dimensions = embeddingVectorSize, DistanceFunction = DistanceFunction.CosineSimilarity, IndexKind = IndexKind.Hnsw,
+                Dimensions = EmbeddingModels.ContainsKey(embeddingModel) ? EmbeddingModels[embeddingModel] : 384,
+                DistanceFunction = DistanceFunction.CosineSimilarity, IndexKind = IndexKind.Hnsw,
                 StoragePropertyName = "page_content_vector"
             },
         }
