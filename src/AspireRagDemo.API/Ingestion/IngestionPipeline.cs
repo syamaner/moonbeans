@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using AspireRagDemo.API.Models;
 using AspireRagDemo.ServiceDefaults.Metrics;
 using Microsoft.Extensions.Options;
@@ -18,12 +17,10 @@ public class IngestionPipeline(
     ILogger<IngestionPipeline> logger,
     IEnumerable<IChunker> documentChunkers)
 {
-
     private readonly IVectorStoreRecordCollection<Guid, FaqRecord> _faqCollection =
         vectorStore.GetCollection<Guid, FaqRecord>(configuration.Value.VectorStoreCollectionName ??
                                                    throw new InvalidOperationException(
                                                        $"Vector store collection name is not set in the configuration. {configuration.Value.VectorStoreCollectionName}"));
-
     private readonly ITextEmbeddingGenerationService _embeddingGenerator =
         kernel.GetRequiredService<ITextEmbeddingGenerationService>();
 
@@ -39,7 +36,7 @@ public class IngestionPipeline(
             throw new ArgumentException($"Document type {documentType} is not supported.");
         }
 
-        using var ingestionMeterHelper = new MetricHelper(metrics,
+        using var ingestionTimer = new MetricTimer(metrics,
             MetricNames.DocumentIngestion, new KeyValuePair<string, object?>("File", filePath),
             new KeyValuePair<string, object?>("EmbeddingModel", configuration.Value.EmbeddingModel));
 
@@ -49,7 +46,7 @@ public class IngestionPipeline(
             {
                 IList<ReadOnlyMemory<float>>? embeddings = null;
 
-                using (new MetricHelper(metrics,
+                using (new MetricTimer(metrics,
                            MetricNames.Embedding, new KeyValuePair<string, object?>("File", filePath),
                            new KeyValuePair<string, object?>("EmbeddingModel", configuration.Value.EmbeddingModel)))
                 {

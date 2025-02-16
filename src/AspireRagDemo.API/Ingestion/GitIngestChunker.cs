@@ -17,7 +17,6 @@ public class GitIngestChunker : IChunker
         _splitters = new Dictionary<string, TextSplitter>
         {
             { ".md", new MarkdownHeaderTextSplitter(headersToSplitOn) },
-            //add for yml
             { ".yml", _characterSplitter },
             { ".yaml", _characterSplitter }
         };
@@ -25,15 +24,14 @@ public class GitIngestChunker : IChunker
 
     public async IAsyncEnumerable<FileChunks> GetChunks(string gitIngestFilePath)
     {
-        var content = await File2.ReadAllTextAsync(gitIngestFilePath);
-        var files = GitIngestParser.ParseContent(content);
+        var gitIngestFileContent = await File.ReadAllTextAsync(gitIngestFilePath);
+        var files = GitIngestParser.ParseContent(gitIngestFileContent);
         
         foreach (var file in files)
         {
-            using var chunkingMeterHelper=new MetricHelper(_metrics, MetricNames.Chunking);
-            
-            var extension = Path.GetExtension(file.Key);
-            if (!_splitters.TryGetValue(extension, value: out var splitter)) continue;
+            using var chunkingTimer = new MetricTimer(_metrics, MetricNames.Chunking);            
+            var fileExtension = Path.GetExtension(file.Key);
+            if (!_splitters.TryGetValue(fileExtension, value: out var splitter)) continue;
             
             var fileChunks = new FileChunks(file.Key, []);
 

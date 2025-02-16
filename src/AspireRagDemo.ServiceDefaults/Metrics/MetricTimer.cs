@@ -2,14 +2,14 @@ using System.Diagnostics;
 
 namespace AspireRagDemo.ServiceDefaults.Metrics;
 
-public class MetricHelper: IDisposable
+public class MetricTimer: IDisposable
 {
     private readonly Stopwatch _stopwatch;
     private readonly AspireRagDemoIngestionMetrics _metrics;
     private readonly MetricNames _metricName;
     private readonly KeyValuePair<string, object?>[] _tags;
     // constructor
-    public MetricHelper(AspireRagDemoIngestionMetrics metrics, MetricNames metricName, params KeyValuePair<string, object?>[] tags)
+    public MetricTimer(AspireRagDemoIngestionMetrics metrics, MetricNames metricName, params KeyValuePair<string, object?>[] tags)
     {
         _metrics = metrics;
         _metricName = metricName;
