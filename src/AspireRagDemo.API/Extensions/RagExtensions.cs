@@ -5,12 +5,13 @@ using AspireRagDemo.API.Infrastructure;
 using AspireRagDemo.ServiceDefaults;
 using Microsoft.SemanticKernel;
 using Microsoft.SemanticKernel.Connectors.Qdrant;
-using Qdrant.Client;
 
 namespace AspireRagDemo.API.Extensions;
 
 public static class RagExtensions
 {
+    private static readonly List<string> OpenAiModels = ["chatgpt-4o-latest", "text-embedding-3-large"];
+    
     private const long HttpTimeoutMinutes = 10;
     public static void AddSemanticKernelModels(this WebApplicationBuilder builder)
     {
@@ -20,7 +21,8 @@ public static class RagExtensions
 
         var kernelBuilder = Kernel.CreateBuilder();
 
-        AddVectorStore(builder, modelConfiguration.EmbeddingModel, kernelBuilder);
+       AddVectorStore(builder, modelConfiguration, kernelBuilder);
+        
         AddEmbeddingModel(builder.Configuration, modelConfiguration, kernelBuilder);
         AddChatModel(builder.Configuration, modelConfiguration, kernelBuilder);
         
@@ -30,97 +32,92 @@ public static class RagExtensions
 
     private static void AddEmbeddingModel(IConfiguration configuration, ModelConfiguration modelConfiguration,
         IKernelBuilder kernelBuilder)
-    {
+    {        
+        var apiKey = modelConfiguration.OpenAiApiKey ?? throw new InvalidOperationException(
+            $"Model Configuration {nameof(modelConfiguration.OpenAiApiKey)} cannot be null.");
+             
+        var embeddingModels = 
+            modelConfiguration.BenchmarkConfigurations.Select(x => x.EmbeddingModel).Distinct();
         
-        var apiKey = modelConfiguration.EmbeddingModelProviderApiKey ?? throw new InvalidOperationException(
-            $"Model Configuration {nameof(modelConfiguration.EmbeddingModelProviderApiKey)} cannot be null.");
-        
-        var embeddingModel = modelConfiguration.EmbeddingModel 
-            ?? throw new InvalidOperationException($"Model Configuration {nameof(modelConfiguration.EmbeddingModel)} cannot be null.");
-        
-        switch (modelConfiguration.EmbeddingModelProvider)
+        foreach (var model in embeddingModels)
         {
-            case ModelProvider.HuggingFace:
-                kernelBuilder.AddHuggingFaceTextEmbeddingGeneration(model:embeddingModel,
-                    apiKey:apiKey,
-                    serviceId:Constants.ConnectionStringNames.EmbeddingModel);
-                break;
-            case ModelProvider.OpenAI:
-                kernelBuilder.AddOpenAITextEmbeddingGeneration(modelId:embeddingModel,
-                    apiKey:apiKey,
-                    serviceId: Constants.ConnectionStringNames.EmbeddingModel);
-                break;
-            case ModelProvider.Ollama:
-            case ModelProvider.OllamaHost:
-                kernelBuilder.AddOllamaTextEmbeddingGeneration(modelConfiguration.EmbeddingModel,
-                    GetHttpClient(configuration, Constants.ConnectionStringNames.EmbeddingModel),
-                    Constants.ConnectionStringNames.EmbeddingModel);
-                break;
-            default:
-                throw new ArgumentOutOfRangeException("EmbeddingModelProvider");
+            if (OpenAiModels.Contains(model, StringComparer.OrdinalIgnoreCase))
+            {
+                kernelBuilder.AddOpenAITextEmbeddingGeneration(modelId: model,
+                    apiKey: apiKey,
+                    serviceId: model);
+            }
+            else
+            {
+                kernelBuilder.AddOllamaTextEmbeddingGeneration(model,
+                    GetHttpClient(configuration, modelConfiguration.OllamaUrl),
+                    model);
+            }
         }
     }
 
     private static void AddChatModel(IConfiguration configuration, ModelConfiguration modelConfiguration,
         IKernelBuilder kernelBuilder)
     {        
-        var apiKey = modelConfiguration.ChatModelProviderApiKey;
-        switch (modelConfiguration.ChatModelProvider)
+
+        var models = modelConfiguration.BenchmarkConfigurations.SelectMany(x
+            => x.ChatModels).Distinct();
+        foreach (var model in models)
         {
-            case ModelProvider.HuggingFace:
-                kernelBuilder.AddHuggingFaceChatCompletion(modelConfiguration.ChatModel,
+            if ( OpenAiModels.Contains(model, StringComparer.OrdinalIgnoreCase))
+            {
+                var apiKey = modelConfiguration.OpenAiApiKey;
+                kernelBuilder.AddOpenAIChatCompletion(model,
                     apiKey: apiKey,
-                    serviceId:Constants.ConnectionStringNames.ChatModel);
-                break;
-            case ModelProvider.OpenAI:
-                kernelBuilder.AddOpenAIChatCompletion(modelConfiguration.ChatModel,
-                    apiKey:apiKey,
-                    serviceId: Constants.ConnectionStringNames.ChatModel);
-                break;
-            case ModelProvider.Ollama:
-            case ModelProvider.OllamaHost:
-                kernelBuilder.AddOllamaChatCompletion(modelConfiguration.ChatModel, 
-                    GetHttpClient(configuration, Constants.ConnectionStringNames.ChatModel),
-                    serviceId: Constants.ConnectionStringNames.ChatModel);
-                break;
-            default:
-                throw new ArgumentOutOfRangeException("ChatModelProvider");
+                    serviceId: model);
+            }
+            else
+            {
+                kernelBuilder.AddOllamaChatCompletion(model,
+                    GetHttpClient(configuration, modelConfiguration.OllamaUrl),
+                    serviceId: model);                
+            }
         }
     }
 
-    private static void AddVectorStore(WebApplicationBuilder builder,  string embeddingModelName, IKernelBuilder kernelBuilder)
+    private static void AddVectorStore(WebApplicationBuilder builder, ModelConfiguration modelConfiguration,
+        IKernelBuilder kernelBuilder)
     {
         var configuration = builder.Configuration;
         var connectionString = configuration.GetConnectionString(Constants.ConnectionStringNames.Qdrant);
         var endpoint = connectionString?.Split(";")[0].Replace("Endpoint=", "");
         var key = connectionString?.Split(";")[1].Replace("Key=", "");
-        var client = new QdrantClient(
-            new Uri(endpoint ?? throw new InvalidOperationException("Qdrant endpoint cannot be null.")), key);
-        builder.Services.AddSingleton(client);
 
-        var options = new QdrantVectorStoreOptions
+        var embeddingModels =
+            modelConfiguration.BenchmarkConfigurations.Select(x => x.EmbeddingModel).Distinct();
+        var parts = endpoint.Split(":");
+        var url = parts[1].Replace("//", "");
+        
+        var port = int.Parse(parts[2]);
+        foreach (var embeddingModel in embeddingModels)
         {
-            HasNamedVectors = true,
-            VectorStoreCollectionFactory = new QdrantCollectionFactory(embeddingModelName)
-        };
-        builder.Services.AddSingleton(options);
+            // string host, int port = 6334, bool https = false, string? apiKey = default,
+            var options = new QdrantVectorStoreOptions
+            {
+                HasNamedVectors = true,
+                VectorStoreCollectionFactory = new QdrantCollectionFactory(embeddingModel)
+            }; 
 
-        builder.Services.AddQdrantVectorStore(options: options);
-        kernelBuilder.AddQdrantVectorStore(options: options);
+            builder.Services.AddQdrantVectorStore(options: options, host: url, port: port, apiKey: key,
+                serviceId: embeddingModel);
+
+            kernelBuilder.AddQdrantVectorStore(options: options, host: url, port: port, apiKey: key,
+                serviceId: embeddingModel);
+        }
     }
 
-    private static HttpClient GetHttpClient(IConfiguration configuration, string connectionStringName)
-    {
-        var connectionString = configuration.GetConnectionString(connectionStringName)
-                               ?? throw new InvalidOperationException("Model connection string cannot be null.");
-        var parts = connectionString.Split(";");
-        var host = parts[0].Replace("Endpoint=", "");
-
+    private static HttpClient GetHttpClient(IConfiguration configuration, string ollamaUrl)
+    { 
         return new HttpClient
         {
             Timeout = TimeSpan.FromMinutes(HttpTimeoutMinutes),
             // API Project is not running in docker so we need to use localhost if using a locally hosted instance of Ollama.
-            BaseAddress = new Uri(host.Replace("host.docker.internal", "localhost"))
+            BaseAddress = new Uri(ollamaUrl)
         };
     }
 }

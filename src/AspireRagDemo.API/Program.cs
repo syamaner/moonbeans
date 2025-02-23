@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using AspireRagDemo.API;
 using AspireRagDemo.API.Chat;
 using AspireRagDemo.API.Extensions;
@@ -31,44 +32,47 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.MapGet("/vector-search", async ([FromQuery] string query,
-        [FromServices] Kernel kernel,
-        [FromServices] QdrantClient qdrantClient,
-        [FromServices] IOptions<ModelConfiguration> configuration) =>
-    {
-        var collectionName = configuration.Value.VectorStoreCollectionName ?? throw new InvalidOperationException(
-            $"Model Configuration {nameof(configuration.Value.VectorStoreCollectionName)} cannot be null.");
-        
-        var embeddingGenerator = kernel.GetRequiredService<ITextEmbeddingGenerationService>();
-        var vectors = await embeddingGenerator.GenerateEmbeddingsAsync([query]);
-        var result = await qdrantClient.SearchAsync(collectionName, vectors[0], limit: 5);
-        return result;
-    })
-    .WithName("VectorSearch");
 
-app.MapGet("/chat-with-context", async ([FromQuery] string query,
+app.MapGet("/chat-with-context", async ([FromQuery] string query, [FromQuery] string embeddingModel, [FromQuery] string chatModel,
         [FromServices] IChatClient technicalAssistantChat,
         [FromServices] IOptions<ModelConfiguration> configuration) =>
     {
         //Can you please explain why Should I learn .Net Aspire if I already know Docker Compose?
-        var answer = await technicalAssistantChat.AnswerQuestion(query, true);
-        return new ChatResponse(answer, query, configuration.Value.EmbeddingModel, configuration.Value.ChatModel);
+        var answer = await technicalAssistantChat.AnswerQuestion(query, true,embeddingModel);
+        return new ChatResponse(answer, query, embeddingModel, chatModel);
     })
     .WithName("RagChat");
 
-app.MapGet("/chat", async ([FromQuery] string query, [FromServices] IChatClient technicalAssistantChat,
+app.MapGet("/chat", async ([FromQuery] string query,[FromQuery] string embeddingModel, 
+        [FromQuery] string chatModel, [FromServices] IChatClient technicalAssistantChat,
         [FromServices] IOptions<ModelConfiguration> configuration) =>
     {
-        var answer = await technicalAssistantChat.AnswerQuestion(query, false);
-        return new ChatResponse(answer, query, configuration.Value.EmbeddingModel, configuration.Value.ChatModel);
+        var answer = await technicalAssistantChat.AnswerQuestion(query, false, embeddingModel);
+        return new ChatResponse(answer, query, embeddingModel, chatModel);
     })
     .WithName("BasicChat");
+ActivitySource source = new ActivitySource("IngestionApi", "1.0.0");
 
-app.MapGet("/ingest", async ([FromQuery] string fileName, [FromServices] IngestionPipeline ingestionPipeline) =>
+app.MapGet("/ingest", async ([FromQuery] string fileName,[FromQuery] string? embeddingModel, 
+        [FromServices] IngestionPipeline ingestionPipeline,   [FromServices] IOptions<ModelConfiguration> configuration) =>
     {
         if (string.IsNullOrWhiteSpace(fileName))
             fileName = "dotnet-docs-aspire.txt";
-        await ingestionPipeline.IngestDataAsync(fileName, DocumentType.GitIngest);
+        if(!string.IsNullOrWhiteSpace(embeddingModel))
+        {
+            await ingestionPipeline.IngestDataAsync(fileName, DocumentType.GitIngest, embeddingModel);            
+        }
+        else
+        {
+            using var activity = source.StartActivity("Bulk ingest");
+            foreach (var benchmarkConfiguration in configuration.Value.BenchmarkConfigurations)
+            {
+                using var activity1 = source.StartActivity(name:"Ingest for embedding model", kind:ActivityKind.Internal, 
+                  tags:  [new KeyValuePair<string, object?>("EmbeddingModel", benchmarkConfiguration.EmbeddingModel)]);
+                await ingestionPipeline.IngestDataAsync(fileName, DocumentType.GitIngest,
+                    benchmarkConfiguration.EmbeddingModel);
+            }
+        }
         return true;
     })
     .WithName("Ingest");

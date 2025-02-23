@@ -10,17 +10,17 @@ Accept: application/json
 
 ###
 # @timeout 60000
-GET  http://localhost:5026/chat-with-context?query="What is the purpose of .Net Aspire? And why does it matter?"
+GET  http://localhost:5026/chat-with-context?query="What is the purpose of .NET Aspire?"&embeddingModel=nomic-embed-text&chatModel=chatgpt-4o-latest
 Accept: application/json
 
 
 ###
 # @timeout 60000
-GET  http://localhost:5026/chat?query="What is the purpose of this repository? Also what is the name?"
+GET  http://localhost:5026/chat?query="What is the purpose of .NET Aspire?"&embeddingModel=nomic-embed-text&chatModel=chatgpt-4o-latest
 Accept: application/json
 
 
 ###
-# @timeout 60000
+# @timeout 600000
 GET  http://localhost:5026/ingest?fileName=dotnet-docs-aspire.txt
 Accept: application/json

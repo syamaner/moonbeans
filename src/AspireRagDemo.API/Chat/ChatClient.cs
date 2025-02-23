@@ -10,26 +10,17 @@ namespace AspireRagDemo.API.Chat;
 
 public class ChatClient(
     Kernel kernel,
-    IVectorStore vectorStore, 
-    IOptions<ModelConfiguration> configuration,
     ILogger<ChatClient> logger) : IChatClient
 {
     private const short TopSearchResults = 10;
-
-    private readonly ITextEmbeddingGenerationService _embeddingGenerator =
-        kernel.GetRequiredService<ITextEmbeddingGenerationService>();
-
-    private readonly IVectorStoreRecordCollection<Guid, FaqRecord> _faqCollection =
-        vectorStore.GetCollection<Guid, FaqRecord>(configuration.Value.VectorStoreCollectionName ??
-        throw new InvalidOperationException($"Vector store collection name is not set in the configuration. {configuration.Value.VectorStoreCollectionName }"));
-
-    public async Task<string> AnswerQuestion(string question, bool useAdditionalContext)
+ 
+    public async Task<string> AnswerQuestion(string question, bool useAdditionalContext,  string embeddingModel)
     {
         try
         {
             if (!useAdditionalContext) return await AnswerWithoutAdditionalContext(question);
 
-            var context = await GetContextFromVectorStore(question);
+            var context = await GetContextFromVectorStore(question, embeddingModel);
             return await AnswerWithAdditionalContext(context, question);
         }
         catch (Exception e)
@@ -83,14 +74,18 @@ public class ChatClient(
     /// </summary>
     /// <param name="question"></param>
     /// <returns>Vector Search Results.</returns>
-    private async Task<string> GetContextFromVectorStore(string question)
+    private async Task<string> GetContextFromVectorStore(string question, string embeddingModel)
     {
+        var vectorStore = kernel.GetRequiredService<IVectorStore>(embeddingModel);
+        var faqCollection = vectorStore.GetCollection<Guid, FaqRecord>(embeddingModel);
+        var embeddingGenerator =
+            kernel.GetRequiredService<ITextEmbeddingGenerationService>(embeddingModel);
         var questionVectors =
-            await _embeddingGenerator.GenerateEmbeddingsAsync([question]);
+            await embeddingGenerator.GenerateEmbeddingsAsync([question]);
 
         var stbContext = new StringBuilder();
 
-        var searchResults = await _faqCollection.VectorizedSearchAsync(questionVectors[0],
+        var searchResults = await faqCollection.VectorizedSearchAsync(questionVectors[0],
             new VectorSearchOptions() { Top = TopSearchResults });
 
         await foreach (var item in searchResults.Results)

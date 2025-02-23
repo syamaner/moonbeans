@@ -1,5 +1,6 @@
 using AspireRagDemo.API.Models;
 using AspireRagDemo.ServiceDefaults.Metrics;
+using Azure.Core.Extensions;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.VectorData;
 using Microsoft.SemanticKernel;
@@ -11,22 +12,18 @@ namespace AspireRagDemo.API.Ingestion;
 
 public class IngestionPipeline(
     Kernel kernel,
-    IVectorStore vectorStore,
     AspireRagDemoIngestionMetrics metrics,
-    IOptions<ModelConfiguration> configuration,
     ILogger<IngestionPipeline> logger,
     IEnumerable<IChunker> documentChunkers)
 {
-    private readonly IVectorStoreRecordCollection<Guid, FaqRecord> _faqCollection =
-        vectorStore.GetCollection<Guid, FaqRecord>(configuration.Value.VectorStoreCollectionName ??
-                                                   throw new InvalidOperationException(
-                                                       $"Vector store collection name is not set in the configuration. {configuration.Value.VectorStoreCollectionName}"));
-    private readonly ITextEmbeddingGenerationService _embeddingGenerator =
-        kernel.GetRequiredService<ITextEmbeddingGenerationService>();
+    public async Task IngestDataAsync(string filePath, DocumentType documentType, string embeddingModel)
+    {        
+        var vectorStore = kernel.GetRequiredService<IVectorStore>(embeddingModel);
+        var faqCollection = vectorStore.GetCollection<Guid, FaqRecord>(embeddingModel);
+        var embeddingGenerator =
+            kernel.GetRequiredService<ITextEmbeddingGenerationService>(embeddingModel);
+        await EnsureCollectionExists(faqCollection, true);
 
-    public async Task IngestDataAsync(string filePath, DocumentType documentType)
-    {
-        await EnsureCollectionExists(true);
         var documentsProcessed = 0;
         var documentChunker = documentChunkers.FirstOrDefault(x => x.CanChunk(documentType));
 
@@ -38,7 +35,7 @@ public class IngestionPipeline(
 
         using var ingestionTimer = new MetricTimer(metrics,
             MetricNames.DocumentIngestion, new KeyValuePair<string, object?>("File", filePath),
-            new KeyValuePair<string, object?>("EmbeddingModel", configuration.Value.EmbeddingModel));
+            new KeyValuePair<string, object?>("EmbeddingModel", embeddingModel));
 
         await foreach (var fileChunk in documentChunker.GetChunks(filePath))
         {
@@ -48,9 +45,9 @@ public class IngestionPipeline(
 
                 using (new MetricTimer(metrics,
                            MetricNames.Embedding, new KeyValuePair<string, object?>("File", filePath),
-                           new KeyValuePair<string, object?>("EmbeddingModel", configuration.Value.EmbeddingModel)))
+                           new KeyValuePair<string, object?>("EmbeddingModel", embeddingModel)))
                 {
-                    embeddings = await _embeddingGenerator.GenerateEmbeddingsAsync(fileChunk.Chunks);
+                    embeddings = await embeddingGenerator.GenerateEmbeddingsAsync(fileChunk.Chunks);
                 }
 
                 metrics.RecordProcessedChunkCount(fileChunk.Chunks.Count);
@@ -68,7 +65,7 @@ public class IngestionPipeline(
                                 FileName = new StringValue() { Value = fileChunk.FileName }
                             }
                         };
-                        await _faqCollection.UpsertAsync(faqRecord);
+                        await faqCollection.UpsertAsync(faqRecord);
                     }
                     catch (Exception e)
                     {
@@ -87,18 +84,18 @@ public class IngestionPipeline(
         metrics.RecordProcessedDocumentCount(documentsProcessed);
     }
 
-    private async Task EnsureCollectionExists(bool forceRecreate = false)
+    private async Task EnsureCollectionExists(IVectorStoreRecordCollection<Guid, FaqRecord> faqCollection, bool forceRecreate = false)
     {
-        var collectionExists = await _faqCollection.CollectionExistsAsync();
+        var collectionExists = await faqCollection.CollectionExistsAsync();
         switch (collectionExists)
         {
             case true when !forceRecreate:
                 return;
             case true:
-                await _faqCollection.DeleteCollectionAsync();
+                await faqCollection.DeleteCollectionAsync();
                 break;
         }
 
-        await _faqCollection.CreateCollectionAsync();
+        await faqCollection.CreateCollectionAsync();
     }
 }

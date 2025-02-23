@@ -2,5 +2,5 @@
 
 public interface IChatClient
 {
-    Task<string> AnswerQuestion(string question, bool useAdditionalContext);
+    Task<string> AnswerQuestion(string question, bool useAdditionalContext, string embeddingModel);
 }

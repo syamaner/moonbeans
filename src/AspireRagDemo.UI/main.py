@@ -30,7 +30,7 @@ def main():
                 TraceContextTextMapPropagator().inject(carrier)
                 logger.info(carrier)
                 header = {"traceparent": carrier["traceparent"]}    
-                response = requests.get(f"{API_BASE_URL}/{endpoint}", params={'query': query}, headers=header)
+                response = requests.get(f"{API_BASE_URL}/{endpoint}", params={'query': query, 'chatModel':'llama3.3', 'embeddingModel':'nomic-embed-text'}, headers=header)
                 response.raise_for_status()
                 return response.json()
         except requests.exceptions.RequestException as e:

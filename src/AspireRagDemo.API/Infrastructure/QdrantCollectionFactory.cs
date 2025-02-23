@@ -13,7 +13,9 @@ public class QdrantCollectionFactory(string embeddingModel="nomic-embed-text") :
     {
         { "mxbai-embed-large", 1024 },
         { "nomic-embed-text", 768 },
-        { "granite-embedding:30m", 384 }
+        { "granite-embedding:30m", 384 },
+        { "text-embedding-3-large", 3072 },
+        { "snowflake-arctic-embed", 1024 }
     };
 
 

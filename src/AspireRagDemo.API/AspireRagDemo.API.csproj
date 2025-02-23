@@ -8,15 +8,15 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="LangChain.DocumentLoaders.Abstractions" Version="0.17.0" />
-        <PackageReference Include="LangChain.Splitters.Abstractions" Version="0.17.0" />
+        <PackageReference Include="LangChain.DocumentLoaders.Abstractions" Version="0.17.1-dev.5" />
+        <PackageReference Include="LangChain.Splitters.Abstractions" Version="0.17.1-dev.5" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.1" />
         <PackageReference Include="Microsoft.SemanticKernel" Version="1.34.0" />
-        <PackageReference Include="Microsoft.SemanticKernel.Connectors.HuggingFace" Version="1.37.0-preview" />
-        <PackageReference Include="Microsoft.SemanticKernel.Connectors.Ollama" Version="1.37.0-alpha" />
-        <PackageReference Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="1.37.0-preview" />
-        <PackageReference Include="Microsoft.SemanticKernel.Markdown" Version="1.37.0-alpha" />
-        <PackageReference Include="Microsoft.SemanticKernel.Plugins.Document" Version="1.37.0-alpha" />
+        <PackageReference Include="Microsoft.SemanticKernel.Connectors.HuggingFace" Version="1.38.0-preview" />
+        <PackageReference Include="Microsoft.SemanticKernel.Connectors.Ollama" Version="1.38.0-alpha" />
+        <PackageReference Include="Microsoft.SemanticKernel.Connectors.Qdrant" Version="1.38.0-preview" />
+        <PackageReference Include="Microsoft.SemanticKernel.Markdown" Version="1.38.0-alpha" />
+        <PackageReference Include="Microsoft.SemanticKernel.Plugins.Document" Version="1.38.0-alpha" />
     </ItemGroup>
 
     <ItemGroup>
