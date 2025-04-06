@@ -24,3 +24,7 @@ Accept: application/json
 # @timeout 600000
 GET  http://localhost:5026/ingest?fileName=dotnet-docs-aspire.txt
 Accept: application/json
+
+### Vector Search Request
+GET http://localhost:5026/vector-search?query=What%20is%20the%20purpose%20of%20.NET%20Aspire?&embeddingModel=nomic-embed-text
+Accept: application/json

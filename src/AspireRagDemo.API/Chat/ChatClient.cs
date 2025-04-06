@@ -95,4 +95,25 @@ public class ChatClient(
 
         return stbContext.ToString();
     }
+    
+    public async IAsyncEnumerable<string> GetChunks(string question, string embeddingModel)
+    {
+        var vectorStore = kernel.GetRequiredService<IVectorStore>(embeddingModel);
+        var faqCollection = vectorStore.GetCollection<Guid, FaqRecord>(embeddingModel);
+        var embeddingGenerator =
+            kernel.GetRequiredService<ITextEmbeddingGenerationService>(embeddingModel);
+        var questionVectors =
+            await embeddingGenerator.GenerateEmbeddingsAsync([question]);
+
+        
+        var searchResults = await faqCollection.VectorizedSearchAsync(questionVectors[0],
+            new VectorSearchOptions() { Top = TopSearchResults });
+
+      
+        await foreach (var item in searchResults.Results)
+        {
+           yield return item.Record.Content;
+        }
+ 
+    }
 }

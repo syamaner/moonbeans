@@ -7,12 +7,11 @@ using AspireRagDemo.API.Models;
 using AspireRagDemo.ServiceDefaults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using Microsoft.SemanticKernel;
-using Microsoft.SemanticKernel.Embeddings;
-using Qdrant.Client;
 
 #pragma warning disable SKEXP0070
 #pragma warning disable SKEXP0001
+
+var source = new ActivitySource("IngestionApi", "1.0.0");
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
@@ -31,6 +30,20 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
+
+app.MapGet("/vector-search", async ([FromQuery] string query, [FromQuery] string embeddingModel,
+        [FromServices] IChatClient technicalAssistantChat,
+        [FromServices] IOptions<ModelConfiguration> configuration) =>
+    {
+        List<string?> chunks = [];        
+        var answer =   technicalAssistantChat.GetChunks(query, embeddingModel).GetAsyncEnumerator();        
+        while (await answer.MoveNextAsync())
+        {
+            chunks.Add(answer.Current);
+        }        
+        return chunks;
+    })
+    .WithName("VectrSearch");
 
 
 app.MapGet("/chat-with-context", async ([FromQuery] string query, [FromQuery] string embeddingModel, [FromQuery] string chatModel,
@@ -51,7 +64,6 @@ app.MapGet("/chat", async ([FromQuery] string query,[FromQuery] string embedding
         return new ChatResponse(answer, query, embeddingModel, chatModel);
     })
     .WithName("BasicChat");
-ActivitySource source = new ActivitySource("IngestionApi", "1.0.0");
 
 app.MapGet("/ingest", async ([FromQuery] string fileName,[FromQuery] string? embeddingModel, 
         [FromServices] IngestionPipeline ingestionPipeline,   [FromServices] IOptions<ModelConfiguration> configuration) =>
