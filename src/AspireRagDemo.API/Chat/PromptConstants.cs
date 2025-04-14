@@ -17,10 +17,10 @@ public static class PromptConstants
                                                    """;
     private const string RagPromptTemplate = """
                                              You are a helpful AI assistant specialised in technical questions and good at utilising additional technical resources provided to you as additional context.
-                                             Use the following context to answer the question. You always bringing necessary references.
+                                             Use the following context to answer the question. Be truthful.
                                              You prefer a good summary over a long explanation but also provide clear justification for the answer.
                                              If the question has absolutely no relevance to the context, please answer "I don't know the answer."
-                                             Please do not include the question in the answer. You can sometimes make educated guesses if the context can imply the answer.
+                                             Please do not include the question in the answer.
 
                                              Context:
                                              {{$context}}
